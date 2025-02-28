@@ -304,12 +304,11 @@ if __name__ == "__main__":
 
     # Initialize and start the scheduler
     scheduler = BackgroundScheduler()
-
     scheduler.add_job(
         run_data_fetch,
-        trigger=CronTrigger(minute="*/1"),
-        id="daily_data_fetch",
-        name="Daily Data Fetch",
+        trigger=CronTrigger(hour="*/3"),
+        id="data_fetch",
+        name="Data Fetch",
     )
 
     scheduler.add_job(
