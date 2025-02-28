@@ -2,36 +2,80 @@ import os
 import time
 from datetime import datetime
 from pathlib import Path
+from threading import Lock
+from time import time as current_time
 from xml.dom.minidom import parseString
 
 import pandas as pd
 import requests
-from dotenv import load_dotenv
 from requests.exceptions import RequestException
 
-load_dotenv()
 
-# Retrieve the secret API key from the environment variable
-api_key = os.getenv("API_KEY")
-if not api_key:
-    raise ValueError("No API Key provided!")
+class RateLimiter:
+    """Token bucket rate limiter for API calls."""
 
-client_id = os.getenv("CLIENT_ID")
-if not client_id:
-    raise ValueError("No Client Id provided!")
+    def __init__(self, rate=50, per=60):
+        self.rate = rate  # Number of tokens per time period
+        self.per = per  # Time period in seconds
+        self.tokens = rate  # Current token count
+        self.last_update = current_time()
+        self.lock = Lock()
 
-headers = {
-    "DB-Api-Key": api_key,
-    "DB-Client-Id": client_id,
-    "accept": "application/xml",
-}
+    def _add_tokens(self):
+        """Add tokens based on time elapsed."""
+        now = current_time()
+        time_passed = now - self.last_update
+        new_tokens = time_passed * (self.rate / self.per)
+        self.tokens = min(self.rate, self.tokens + new_tokens)
+        self.last_update = now
+
+    def acquire(self):
+        """Acquire a token, waiting if necessary."""
+        with self.lock:
+            while self.tokens < 1:
+                self._add_tokens()
+                if self.tokens < 1:
+                    time.sleep(0.1)  # Sleep briefly to prevent busy waiting
+
+            self.tokens -= 1
+            return True
 
 
-def save_api_data(formatted_url, save_path, prettify=True, max_retries=4):
+# Create a global rate limiter instance
+rate_limiter = RateLimiter(rate=50, per=60)  # 50 requests per minute
+
+
+def get_api_credentials():
+    """Get API credentials from environment variables."""
+    api_key = os.getenv("API_KEY")
+    if not api_key:
+        raise ValueError("No API Key provided!")
+
+    client_id = os.getenv("CLIENT_ID")
+    if not client_id:
+        raise ValueError("No Client Id provided!")
+
+    return api_key, client_id
+
+
+def get_api_headers(api_key, client_id):
+    """Get API headers for requests."""
+    return {
+        "DB-Api-Key": api_key,
+        "DB-Client-Id": client_id,
+        "accept": "application/xml",
+    }
+
+
+def save_api_data(formatted_url, save_path, headers, prettify=True, max_retries=4):
+    """Save API data to file with retries and rate limiting."""
     for attempt in range(max_retries):
         try:
+            # Acquire a token before making the request
+            rate_limiter.acquire()
+
             response = requests.get(formatted_url, headers=headers, timeout=10)
-            response.raise_for_status()  # Raises an HTTPError for bad responses
+            response.raise_for_status()
             if attempt > 0:
                 print(f"Success after {attempt} attempts.")
 
@@ -41,7 +85,7 @@ def save_api_data(formatted_url, save_path, prettify=True, max_retries=4):
                 else:
                     f.write(parseString(response.content).toxml())
 
-            time.sleep(1 / 60)  # Rate limiting
+            print("SUCCESS:", formatted_url)
             return  # Success, exit the function
 
         except (RequestException, ConnectionError) as e:
@@ -57,7 +101,23 @@ def save_api_data(formatted_url, save_path, prettify=True, max_retries=4):
     print(f"error: Could not retrieve data for {formatted_url}")
 
 
-def main():
+def fetch_data(
+    api_key=None, client_id=None, eva_file="current_eva_list.csv", base_data_dir="data"
+):
+    """
+    Main function to fetch data that can be called directly or via command line.
+
+    Args:
+        api_key (str, optional): DB API key. If None, will try to get from environment.
+        client_id (str, optional): DB Client ID. If None, will try to get from environment.
+        eva_file (str): Path to the CSV file containing EVA numbers.
+        base_data_dir (str): Base directory to store the data.
+    """
+    if api_key is None or client_id is None:
+        api_key, client_id = get_api_credentials()
+
+    headers = get_api_headers(api_key, client_id)
+
     plan_url = "https://apis.deutschebahn.com/db-api-marketplace/apis/timetables/v1/plan/{eva}/{date}/{hour}"
     fchg_url = (
         "https://apis.deutschebahn.com/db-api-marketplace/apis/timetables/v1/fchg/{eva}"
@@ -66,10 +126,10 @@ def main():
     date_str = datetime.now().strftime("%Y-%m-%d")
     date_str_url = date_str.replace("-", "")[2:]
 
-    save_folder = Path("data") / date_str
+    save_folder = Path(base_data_dir) / date_str
     save_folder.mkdir(exist_ok=True, parents=True)
 
-    df = pd.read_csv("current_eva_list.csv")
+    df = pd.read_csv(eva_file)
     eva_list = []
     for evas in df["evas"]:
         eva_list.extend(evas.split(","))
@@ -80,6 +140,7 @@ def main():
         save_api_data(
             formatted_fchg_url,
             save_folder / f"{eva}_fchg_{curent_hour:02}.xml",
+            headers=headers,
             prettify=False,
         )
 
@@ -92,10 +153,15 @@ def main():
             formatted_plan_url = plan_url.format(
                 eva=eva, date=date_str_url, hour=f"{hour:02}"
             )
-            save_api_data(formatted_plan_url, save_folder / f"{eva}_plan_{hour:02}.xml")
+            save_api_data(
+                formatted_plan_url,
+                save_folder / f"{eva}_plan_{hour:02}.xml",
+                headers=headers,
+            )
 
     print("Done")
+    return save_folder
 
 
 if __name__ == "__main__":
-    main()
+    fetch_data()

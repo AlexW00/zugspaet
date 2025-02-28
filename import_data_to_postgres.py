@@ -226,46 +226,79 @@ def process_date_folder(date_folder, alternative_station_names, conn):
     print(f"Successfully processed and stored data for {date_str}")
 
 
-def main():
-    data_dir = Path(DATA_DIR)
-    alternative_station_name_json = Path(
-        "alternative_station_name_to_station_name.json"
-    )
+def import_data(data_dir=None, alternative_station_names=None, specific_date=None):
+    """
+    Main function to import data that can be called directly or via command line.
+
+    Args:
+        data_dir (str, optional): Path to data directory. If None, uses DATA_DIR from config.
+        alternative_station_names (dict, optional): Dict of alternative station names.
+            If None, loads from json file.
+        specific_date (str, optional): Specific date to process in YYYY-MM-DD format.
+            If None, processes all unprocessed dates.
+
+    Returns:
+        list: List of processed date strings
+    """
+    data_dir = Path(data_dir or DATA_DIR)
+    processed_dates = []
 
     if not data_dir.exists():
-        print(f"Error: Data directory {data_dir} does not exist")
-        sys.exit(1)
+        raise FileNotFoundError(f"Data directory {data_dir} does not exist")
 
-    if not alternative_station_name_json.exists():
-        print(
-            f"Error: Alternative station names file {alternative_station_name_json} does not exist"
-        )
-        sys.exit(1)
-
-    with alternative_station_name_json.open("r") as f:
-        alternative_station_names = json.load(f)
+    # Load alternative station names if not provided
+    if alternative_station_names is None:
+        alt_station_file = Path("alternative_station_name_to_station_name.json")
+        if not alt_station_file.exists():
+            raise FileNotFoundError(
+                f"Alternative station names file {alt_station_file} does not exist"
+            )
+        with alt_station_file.open("r") as f:
+            alternative_station_names = json.load(f)
 
     # Initialize the database (create tables if they don't exist)
     print("Initializing database...")
     init_database()
 
-    # Get all date folders
-    date_folders = sorted(
-        [f for f in data_dir.iterdir() if f.is_dir() and f.name[0].isdigit()]
-    )
-
-    if not date_folders:
-        print(f"No date folders found in {data_dir}")
-        sys.exit(1)
-
-    # Process each date folder
+    # Get database connection
     conn = get_db_connection()
     try:
-        for date_folder in date_folders:
+        # If specific date is provided, only process that date
+        if specific_date:
+            date_folder = data_dir / specific_date
+            if not date_folder.exists():
+                raise FileNotFoundError(
+                    f"Data folder for date {specific_date} does not exist"
+                )
             process_date_folder(date_folder, alternative_station_names, conn)
+            processed_dates.append(specific_date)
+        else:
+            # Process all date folders that haven't been processed yet
+            date_folders = sorted(
+                [d for d in data_dir.iterdir() if d.is_dir()],
+                key=lambda x: datetime.strptime(x.name, "%Y-%m-%d"),
+            )
+
+            for date_folder in date_folders:
+                try:
+                    process_date_folder(date_folder, alternative_station_names, conn)
+                    processed_dates.append(date_folder.name)
+                except Exception as e:
+                    print(f"Error processing {date_folder.name}: {str(e)}")
+                    continue
+
     finally:
         conn.close()
 
+    return processed_dates
+
 
 if __name__ == "__main__":
-    main()
+    try:
+        # If a date argument is provided, process only that date
+        specific_date = sys.argv[1] if len(sys.argv) > 1 else None
+        processed = import_data(specific_date=specific_date)
+        print(f"Successfully processed dates: {', '.join(processed)}")
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        sys.exit(1)

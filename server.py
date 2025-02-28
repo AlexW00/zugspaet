@@ -1,6 +1,7 @@
+import logging
 import os
-import subprocess
 import sys
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
 import psycopg2.extras
@@ -13,6 +14,23 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
 from db_utils import get_db_connection
+from fetch_data import fetch_data
+from import_data_to_postgres import import_data
+
+load_dotenv()
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+# Create logs directory if it doesn't exist
+Path("logs").mkdir(exist_ok=True)
+# Create file handler
+file_handler = RotatingFileHandler("logs/app.log", maxBytes=10240, backupCount=10)
+file_handler.setFormatter(
+    logging.Formatter(
+        "%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]"
+    )
+)
+file_handler.setLevel(logging.INFO)
 
 # Load environment variables from .env file
 
@@ -25,35 +43,35 @@ if not client_id:
     raise ValueError("No Client Id provided!")
 
 
-def run_data_import():
-    """Run the data fetch and import process."""
-    app.logger.info("Starting scheduled data import process...")
+def run_data_fetch():
+    """Run the data fetch process."""
+    app.logger.info("Starting scheduled data fetch process...")
 
     try:
-        # First run fetch_data.py (with client and api key as env vars)
         app.logger.info("Fetching new data...")
-        fetch_result = subprocess.run(
-            [sys.executable, "fetch_data.py"],
-            env={"API_KEY": api_key, "CLIENT_ID": client_id},
-            capture_output=True,
-            text=True,
-            check=True,
+        save_folder = fetch_data(api_key=api_key, client_id=client_id)
+        app.logger.info(
+            f"Data fetch completed successfully. Data saved to {save_folder}"
         )
-        app.logger.info("Data fetch completed successfully")
 
-        # Then run import_data_to_postgres.py
+    except Exception as e:
+        app.logger.error(f"Unexpected error during data fetch process: {str(e)}")
+
+
+def run_data_import():
+    """Run the data import process."""
+    app.logger.info("Starting scheduled import process...")
+
+    try:
         app.logger.info("Importing data to database...")
-        import_result = subprocess.run(
-            [sys.executable, "import_data_to_postgres.py"],
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-        app.logger.info("Data import completed successfully")
+        processed_dates = import_data()
+        if processed_dates:
+            app.logger.info(
+                f"Successfully processed dates: {', '.join(processed_dates)}"
+            )
+        else:
+            app.logger.info("No new dates to process")
 
-    except subprocess.CalledProcessError as e:
-        app.logger.error(f"Error during data import process: {str(e)}")
-        app.logger.error(f"Command output: {e.output}")
     except Exception as e:
         app.logger.error(f"Unexpected error during data import process: {str(e)}")
 
@@ -63,6 +81,10 @@ app = Flask(__name__, static_folder="frontend/dist", static_url_path="")
 CORS(
     app, resources={r"/api/*": {"origins": "*"}}
 )  # In production, replace * with specific origins
+
+# Add file handler to Flask logger
+app.logger.addHandler(file_handler)
+app.logger.setLevel(logging.INFO)
 
 # Configure rate limiting
 limiter = Limiter(
@@ -282,13 +304,21 @@ if __name__ == "__main__":
 
     # Initialize and start the scheduler
     scheduler = BackgroundScheduler()
+
+    scheduler.add_job(
+        run_data_fetch,
+        trigger=CronTrigger(minute="*/1"),
+        id="daily_data_fetch",
+        name="Daily Data Fetch",
+    )
+
     scheduler.add_job(
         run_data_import,
-        trigger=CronTrigger(minute="*/1"),
-        # trigger=CronTrigger(hour=21, minute=19),  # Run at 3:00 AM every day
+        trigger=CronTrigger(hour=3, minute=0),  # Run at 3:00 AM every day
         id="daily_data_import",
         name="Daily Data Import",
     )
+
     scheduler.start()
 
     app.run(
