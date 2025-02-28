@@ -35,6 +35,8 @@ services:
       - DB_HOST=database
       - POSTGRES_DB=deutsche_bahn_data
       - DB_PASSWORD=$POSTGRES_PASSWORD
+      - API_KEY=$API_KEY
+      - CLIENT_ID=$CLIENT_ID
     ports:
       - "5000:5000"
     volumes:
