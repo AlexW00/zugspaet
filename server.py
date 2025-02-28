@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+from functools import wraps
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
@@ -42,6 +43,13 @@ client_id = os.getenv("CLIENT_ID")
 if not client_id:
     raise ValueError("No Client Id provided!")
 
+data_dir = Path(os.getenv("DATA_DIR", "data"))
+if not data_dir:
+    raise ValueError("No data directory provided!")
+
+if not data_dir.exists():
+    data_dir.mkdir(parents=True)
+
 
 def run_data_fetch():
     """Run the data fetch process."""
@@ -49,7 +57,9 @@ def run_data_fetch():
 
     try:
         app.logger.info("Fetching new data...")
-        save_folder = fetch_data(api_key=api_key, client_id=client_id)
+        save_folder = fetch_data(
+            api_key=api_key, client_id=client_id, save_dir=data_dir
+        )
         app.logger.info(
             f"Data fetch completed successfully. Data saved to {save_folder}"
         )
@@ -64,7 +74,7 @@ def run_data_import():
 
     try:
         app.logger.info("Importing data to database...")
-        processed_dates = import_data()
+        processed_dates = import_data(data_dir=data_dir)
         if processed_dates:
             app.logger.info(
                 f"Successfully processed dates: {', '.join(processed_dates)}"
@@ -269,6 +279,66 @@ def train_arrivals():
         return jsonify({"error": "Internal server error"}), 500
 
 
+@app.route("/api/status")
+def system_status():
+    try:
+        # Check data directory
+        num_date_folders = len([d for d in data_dir.glob("*") if d.is_dir()])
+
+        # Check database connection and get processed dates
+        conn = get_db_connection()
+        try:
+            with conn.cursor() as cur:
+                cur.execute("SELECT date FROM processed_dates ORDER BY date DESC")
+                processed_dates = [
+                    row[0].strftime("%Y-%m-%d") for row in cur.fetchall()
+                ]
+        finally:
+            conn.close()
+
+        return jsonify(
+            {
+                "status": "ok",
+                "data_directory": {
+                    "num_date_folders": num_date_folders,
+                },
+                "database": {"processed_dates": processed_dates},
+            }
+        )
+    except Exception as e:
+        app.logger.error(f"Error in status endpoint: {str(e)}")
+        return jsonify({"status": "error", "error": str(e)}), 500
+
+
+@app.route("/private/api/fetch", methods=["POST"])
+def trigger_fetch():
+    """Manually trigger data fetch process."""
+    try:
+        save_folder = fetch_data(
+            api_key=api_key, client_id=client_id, save_dir=data_dir
+        )
+        return jsonify(
+            {
+                "status": "success",
+                "message": f"Data fetch completed successfully. Data saved to {save_folder}",
+            }
+        )
+    except Exception as e:
+        app.logger.error(f"Error in manual data fetch: {str(e)}")
+        return jsonify({"status": "error", "error": str(e)}), 500
+
+
+@app.route("/private/api/import", methods=["POST"])
+def trigger_import():
+    """Manually trigger data import process."""
+    try:
+        processed_dates = import_data(data_dir=data_dir)
+        return jsonify({"status": "success", "processed_dates": processed_dates})
+    except Exception as e:
+        app.logger.error(f"Error in manual data import: {str(e)}")
+        return jsonify({"status": "error", "error": str(e)}), 500
+
+
 # Error handlers
 @app.errorhandler(429)
 def ratelimit_handler(e):
@@ -323,4 +393,4 @@ if __name__ == "__main__":
     app.run(
         host="0.0.0.0",
         port=5000,
-    )  # Enable HTTPS in production
+    )

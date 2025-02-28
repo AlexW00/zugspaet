@@ -8,3 +8,4 @@ flask-cors
 flask-limiter
 pyOpenSSL
 APScheduler>=3.10.0
+dotenv

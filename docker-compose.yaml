@@ -2,18 +2,52 @@ version: "3"
 
 services:
   database:
-    image: "postgres:latest"
+    image: "postgres:16-alpine"
+    container_name: deutsche-bahn-database
     ports:
       - 5432:5432
+    environment:
+      - POSTGRES_DB=deutsche_bahn_data
+      - POSTGRES_INITDB_ARGS=--locale=en_US.utf8 --encoding=UTF8
+      - POSTGRES_PASSWORD=$POSTGRES_PASSWORD
+      - LANG=en_US.utf8
+      - LC_ALL=en_US.utf8
+    networks:
+      postgres-network:
+        aliases:
+          - database
+    volumes:
+      - $HOME/deutsche-bahn-data/db-data/:/var/lib/postgresql/data/
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      args:
+        - API_BASE_URL=$BASE_URL/api
+    container_name: deutsche-bahn-app
     env_file:
       - .env
     environment:
-      - POSTGRES_DB=deutsche_bahn_data
-    networks:
-      - postgres-network
+      - DATA_DIR=/app/data/
+      - DB_HOST=database
+    ports:
+      - "5000:5000"
     volumes:
-      - $HOME/deutsche-bahn-data/db-data/:/var/lib/postgresql/data/
+      - $HOME/deutsche-bahn-data/xml/:/app/data/
+    networks:
+      postgres-network:
+        aliases:
+          - app
+    depends_on:
+      database:
+        condition: service_healthy
 
 networks:
   postgres-network:
+    name: deutsche-bahn-postgres-network
     driver: bridge

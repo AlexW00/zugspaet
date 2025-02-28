@@ -1,4 +1,5 @@
 import os
+import time
 from pathlib import Path
 
 import pandas as pd
@@ -8,9 +9,20 @@ from psycopg2.extras import execute_values
 from config import DB_CONFIG
 
 
-def get_db_connection():
-    """Create and return a database connection."""
-    return psycopg2.connect(**DB_CONFIG)
+def get_db_connection(max_retries=5, retry_delay=1):
+    """Create and return a database connection with retries."""
+    last_exception = None
+    for attempt in range(max_retries):
+        try:
+            return psycopg2.connect(**DB_CONFIG)
+        except psycopg2.Error as e:
+            last_exception = e
+            if attempt < max_retries - 1:
+                time.sleep(retry_delay)
+                continue
+            raise Exception(
+                f"Failed to connect to database after {max_retries} attempts: {str(last_exception)}"
+            )
 
 
 def init_database():
