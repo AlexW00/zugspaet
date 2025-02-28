@@ -30,11 +30,11 @@ services:
       args:
         - API_BASE_URL=$BASE_URL/api
     container_name: deutsche-bahn-app
-    env_file:
-      - .env
     environment:
       - DATA_DIR=/app/data/
       - DB_HOST=database
+      - POSTGRES_DB=deutsche_bahn_data
+      - DB_PASSWORD=$POSTGRES_PASSWORD
     ports:
       - "5000:5000"
     volumes:
