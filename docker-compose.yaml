@@ -37,6 +37,7 @@ services:
       - DB_PASSWORD=$POSTGRES_PASSWORD
       - API_KEY=$API_KEY
       - CLIENT_ID=$CLIENT_ID
+      - PRIVATE_API_KEY=$PRIVATE_API_KEY
     ports:
       - "5000:5000"
     volumes:

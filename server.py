@@ -43,6 +43,10 @@ client_id = os.getenv("CLIENT_ID")
 if not client_id:
     raise ValueError("No Client Id provided!")
 
+private_api_key = os.getenv("PRIVATE_API_KEY")
+if not private_api_key:
+    raise ValueError("No Private API Key provided!")
+
 data_dir = Path(os.getenv("DATA_DIR", "data"))
 if not data_dir:
     raise ValueError("No data directory provided!")
@@ -207,6 +211,17 @@ def get_train_arrivals(station, train_name, days_cutoff=30):
         conn.close()
 
 
+def require_private_api_key(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        auth_header = request.headers.get("X-Private-Api-Key")
+        if not auth_header or auth_header != private_api_key:
+            return jsonify({"error": "Unauthorized"}), 401
+        return f(*args, **kwargs)
+
+    return decorated_function
+
+
 @app.route("/api/trainStations", methods=["GET"])
 def train_stations():
     try:
@@ -311,6 +326,7 @@ def system_status():
 
 
 @app.route("/private/api/fetch", methods=["POST"])
+@require_private_api_key
 def trigger_fetch():
     """Manually trigger data fetch process."""
     try:
@@ -329,6 +345,7 @@ def trigger_fetch():
 
 
 @app.route("/private/api/import", methods=["POST"])
+@require_private_api_key
 def trigger_import():
     """Manually trigger data import process."""
     try:
