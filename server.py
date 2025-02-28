@@ -376,11 +376,13 @@ def serve_frontend():
 # Catch-all route to handle SPA routing
 @app.route("/<path:path>")
 def catch_all(path):
-    # First try to serve as a static file
-    if os.path.exists(os.path.join(app.static_folder, path)):
+    try:
+        requested_path = Path(app.static_folder) / path
+        if not requested_path.resolve().is_relative_to(Path(app.static_folder)):
+            return jsonify({"error": "Invalid path"}), 400
         return send_from_directory(app.static_folder, path)
-    # If not a static file, return index.html for client-side routing
-    return send_from_directory(app.static_folder, "index.html")
+    except (ValueError, RuntimeError):
+        return jsonify({"error": "Invalid path"}), 400
 
 
 if __name__ == "__main__":
