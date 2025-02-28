@@ -1,12 +1,62 @@
 import os
+import subprocess
+import sys
+from pathlib import Path
 
 import psycopg2.extras
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.cron import CronTrigger
+from dotenv import load_dotenv
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
 from db_utils import get_db_connection
+
+# Load environment variables from .env file
+
+api_key = os.getenv("API_KEY")
+if not api_key:
+    raise ValueError("No API Key provided!")
+
+client_id = os.getenv("CLIENT_ID")
+if not client_id:
+    raise ValueError("No Client Id provided!")
+
+
+def run_data_import():
+    """Run the data fetch and import process."""
+    app.logger.info("Starting scheduled data import process...")
+
+    try:
+        # First run fetch_data.py (with client and api key as env vars)
+        app.logger.info("Fetching new data...")
+        fetch_result = subprocess.run(
+            [sys.executable, "fetch_data.py"],
+            env={"API_KEY": api_key, "CLIENT_ID": client_id},
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        app.logger.info("Data fetch completed successfully")
+
+        # Then run import_data_to_postgres.py
+        app.logger.info("Importing data to database...")
+        import_result = subprocess.run(
+            [sys.executable, "import_data_to_postgres.py"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        app.logger.info("Data import completed successfully")
+
+    except subprocess.CalledProcessError as e:
+        app.logger.error(f"Error during data import process: {str(e)}")
+        app.logger.error(f"Command output: {e.output}")
+    except Exception as e:
+        app.logger.error(f"Unexpected error during data import process: {str(e)}")
+
 
 app = Flask(__name__, static_folder="frontend/dist", static_url_path="")
 # Configure CORS
@@ -229,6 +279,17 @@ if __name__ == "__main__":
     if not os.path.exists(app.static_folder):
         print(f"Warning: Static folder {app.static_folder} does not exist!")
         os.makedirs(app.static_folder, exist_ok=True)
+
+    # Initialize and start the scheduler
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(
+        run_data_import,
+        trigger=CronTrigger(minute="*/1"),
+        # trigger=CronTrigger(hour=21, minute=19),  # Run at 3:00 AM every day
+        id="daily_data_import",
+        name="Daily Data Import",
+    )
+    scheduler.start()
 
     app.run(
         host="0.0.0.0",

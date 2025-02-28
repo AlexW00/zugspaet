@@ -6,7 +6,10 @@ from xml.dom.minidom import parseString
 
 import pandas as pd
 import requests
+from dotenv import load_dotenv
 from requests.exceptions import RequestException
+
+load_dotenv()
 
 # Retrieve the secret API key from the environment variable
 api_key = os.getenv("API_KEY")
@@ -47,14 +50,18 @@ def save_api_data(formatted_url, save_path, prettify=True, max_retries=4):
                 print("Retrying in 1 seconds...")
                 time.sleep(1)
             else:
-                print(f"Failed to fetch data after {max_retries} attempts: {formatted_url}")
+                print(
+                    f"Failed to fetch data after {max_retries} attempts: {formatted_url}"
+                )
 
     print(f"error: Could not retrieve data for {formatted_url}")
 
 
 def main():
     plan_url = "https://apis.deutschebahn.com/db-api-marketplace/apis/timetables/v1/plan/{eva}/{date}/{hour}"
-    fchg_url = "https://apis.deutschebahn.com/db-api-marketplace/apis/timetables/v1/fchg/{eva}"
+    fchg_url = (
+        "https://apis.deutschebahn.com/db-api-marketplace/apis/timetables/v1/fchg/{eva}"
+    )
 
     date_str = datetime.now().strftime("%Y-%m-%d")
     date_str_url = date_str.replace("-", "")[2:]
@@ -62,7 +69,7 @@ def main():
     save_folder = Path("data") / date_str
     save_folder.mkdir(exist_ok=True, parents=True)
 
-    df = pd.read_csv(Path("monthly_data_releases") / "current_eva_list.csv")
+    df = pd.read_csv("current_eva_list.csv")
     eva_list = []
     for evas in df["evas"]:
         eva_list.extend(evas.split(","))
@@ -78,9 +85,13 @@ def main():
 
     print("curent_hour:", curent_hour)
     for eva in eva_list:
-        for hour in range(curent_hour, curent_hour + 6):  # fetch this hour and the next 5 hours
+        for hour in range(
+            curent_hour, curent_hour + 6
+        ):  # fetch this hour and the next 5 hours
             hour = hour % 24
-            formatted_plan_url = plan_url.format(eva=eva, date=date_str_url, hour=f"{hour:02}")
+            formatted_plan_url = plan_url.format(
+                eva=eva, date=date_str_url, hour=f"{hour:02}"
+            )
             save_api_data(formatted_plan_url, save_folder / f"{eva}_plan_{hour:02}.xml")
 
     print("Done")
