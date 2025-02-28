@@ -413,6 +413,8 @@ if __name__ == "__main__":
 
     scheduler.start()
 
+    app.config["MAX_CONTENT_LENGTH"] = 1 * 1024 * 1024  # 1MB limit
+
     app.run(
         host="0.0.0.0",
         port=5000,
