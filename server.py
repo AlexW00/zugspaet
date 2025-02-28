@@ -47,6 +47,10 @@ private_api_key = os.getenv("PRIVATE_API_KEY")
 if not private_api_key:
     raise ValueError("No Private API Key provided!")
 
+base_url = os.getenv("BASE_URL", "http://localhost:5000")
+if not base_url:
+    raise ValueError("No Base URL provided!")
+
 data_dir = Path(os.getenv("DATA_DIR", "data"))
 if not data_dir:
     raise ValueError("No data directory provided!")
@@ -93,8 +97,8 @@ def run_data_import():
 app = Flask(__name__, static_folder="frontend/dist", static_url_path="")
 # Configure CORS
 CORS(
-    app, resources={r"/api/*": {"origins": "*"}}
-)  # In production, replace * with specific origins
+    app, resources={r"/api/*": {"origins": [base_url]}}
+)  # Restrict CORS to base URL only
 
 # Add file handler to Flask logger
 app.logger.addHandler(file_handler)

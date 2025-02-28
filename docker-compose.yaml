@@ -38,6 +38,7 @@ services:
       - API_KEY=$API_KEY
       - CLIENT_ID=$CLIENT_ID
       - PRIVATE_API_KEY=$PRIVATE_API_KEY
+      - BASE_URL=$BASE_URL
     ports:
       - "5000:5000"
     volumes:
