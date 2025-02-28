@@ -1,0 +1,9 @@
+requests
+pandas>=2.0.0
+psycopg2-binary>=2.9.0
+tqdm>=4.65.0
+pyarrow
+flask
+flask-cors
+flask-limiter
+pyOpenSSL

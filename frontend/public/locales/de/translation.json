@@ -1,0 +1,61 @@
+{
+	"app": {
+		"title": "Zugspät.de"
+	},
+	"language": {
+		"en": "Englisch",
+		"de": "Deutsch",
+		"select": "Sprache auswählen"
+	},
+	"form": {
+		"station": {
+			"label": "Zielbahnhof",
+			"placeholder": "Zielbahnhof auswählen..."
+		},
+		"train": {
+			"label": "Zug",
+			"placeholder": "Zug auswählen..."
+		}
+	},
+	"errors": {
+		"loadStations": "Fehler beim Laden der Bahnhöfe",
+		"loadTrains": "Fehler beim Laden der Züge",
+		"loadArrivals": "Fehler beim Laden der Zugankunftszeiten"
+	},
+	"trainSummary": {
+		"title": "Zugübersicht",
+		"totalArrivals": "Gesamtankünfte (letzter Monat)",
+		"averageDelay": "Durchschnittliche Verspätung",
+		"canceledTrains": "Ausgefallene Züge",
+		"minutes": "Min",
+		"delayDistribution": "Verspätungsverteilung",
+		"delayTimeline": "Verspätungsverlauf",
+		"delayMinutes": "Verspätung (Minuten)",
+		"delayCategories": {
+			"onTime": "Pünktlich (0-5 Min)",
+			"slightDelay": "Leichte Verspätung (6-15 Min)",
+			"majorDelay": "Große Verspätung (>15 Min)",
+			"canceled": "Ausgefallen"
+		},
+		"tooltips": {
+			"trains": "Züge",
+			"minutes": "Minuten",
+			"delay": "Verspätung"
+		}
+	},
+	"trainTable": {
+		"noResults": "Wählen Sie einen Bahnhof und einen Zug aus, um Ankunftsinformationen und Verspätungsstatistiken zu sehen",
+		"columns": {
+			"time": "Zeit",
+			"delay": "Verspätung",
+			"destination": "Endziel",
+			"status": "Status"
+		},
+		"status": {
+			"canceled": "Ausgefallen",
+			"onTime": "Pünktlich",
+			"slightDelay": "Leichte Verspätung",
+			"majorDelay": "Große Verspätung"
+		}
+	}
+}

@@ -1,0 +1,61 @@
+{
+	"app": {
+		"title": "Zugspät.de"
+	},
+	"language": {
+		"en": "English",
+		"de": "German",
+		"select": "Select language"
+	},
+	"form": {
+		"station": {
+			"label": "Destination Station",
+			"placeholder": "Select a destination station..."
+		},
+		"train": {
+			"label": "Train",
+			"placeholder": "Select a train..."
+		}
+	},
+	"errors": {
+		"loadStations": "Failed to load stations",
+		"loadTrains": "Failed to load trains",
+		"loadArrivals": "Failed to load train arrivals"
+	},
+	"trainSummary": {
+		"title": "Train Summary",
+		"totalArrivals": "Total Arrivals (last month)",
+		"averageDelay": "Average Delay",
+		"canceledTrains": "Canceled Trains",
+		"minutes": "min",
+		"delayDistribution": "Delay Distribution",
+		"delayTimeline": "Delay Timeline",
+		"delayMinutes": "Delay (minutes)",
+		"delayCategories": {
+			"onTime": "On Time (0-5 min)",
+			"slightDelay": "Slight Delay (6-15 min)",
+			"majorDelay": "Major Delay (>15 min)",
+			"canceled": "Canceled"
+		},
+		"tooltips": {
+			"trains": "trains",
+			"minutes": "minutes",
+			"delay": "Delay"
+		}
+	},
+	"trainTable": {
+		"noResults": "Select a station and train to see arrival information and delay statistics",
+		"columns": {
+			"time": "Time",
+			"delay": "Delay",
+			"destination": "Final Destination",
+			"status": "Status"
+		},
+		"status": {
+			"canceled": "Canceled",
+			"onTime": "On Time",
+			"slightDelay": "Slight Delay",
+			"majorDelay": "Major Delay"
+		}
+	}
+}
