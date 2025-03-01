@@ -66,7 +66,7 @@ def run_data_fetch():
     try:
         app.logger.info("Fetching new data...")
         save_folder = fetch_data(
-            api_key=api_key, client_id=client_id, save_dir=data_dir
+            api_key=api_key, client_id=client_id, base_data_dir=data_dir
         )
         app.logger.info(
             f"Data fetch completed successfully. Data saved to {save_folder}"
