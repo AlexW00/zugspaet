@@ -129,7 +129,7 @@ def fetch_data(
     save_folder = Path(base_data_dir) / date_str
     save_folder.mkdir(exist_ok=True, parents=True)
 
-    df = pd.read_csv(eva_file)
+    df = pd.read_csv(Path(base_data_dir) / eva_file)
     eva_list = []
     for evas in df["evas"]:
         eva_list.extend(evas.split(","))

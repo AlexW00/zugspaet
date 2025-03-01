@@ -17,6 +17,7 @@ from flask_limiter.util import get_remote_address
 from db_utils import get_db_connection
 from fetch_data import fetch_data
 from import_data_to_postgres import import_data
+from update_eva_list import run_eva_list_update
 
 load_dotenv()
 
@@ -94,6 +95,15 @@ def run_data_import():
         app.logger.error(f"Unexpected error during data import process: {str(e)}")
 
 
+def run_eva_list_update_task():
+    """Run the EVA list update process."""
+    app.logger.info("Starting scheduled EVA list update process...")
+    try:
+        run_eva_list_update(api_key=api_key, client_id=client_id, data_dir=data_dir)
+    except Exception as e:
+        app.logger.error(f"Unexpected error during EVA list update process: {str(e)}")
+
+
 app = Flask(__name__, static_folder="frontend/dist", static_url_path="")
 # Configure CORS
 CORS(
@@ -108,7 +118,7 @@ app.logger.setLevel(logging.INFO)
 limiter = Limiter(
     app=app,
     key_func=get_remote_address,
-    default_limits=["20000 per day", "1000 per hour"],
+    default_limits=["2000 per day", "100 per hour"],
 )
 
 
@@ -395,6 +405,12 @@ if __name__ == "__main__":
         print(f"Warning: Static folder {app.static_folder} does not exist!")
         os.makedirs(app.static_folder, exist_ok=True)
 
+    # Check if EVA list exists and run initial update if not
+    eva_list_file = data_dir / "current_eva_list.csv"
+    if not eva_list_file.exists():
+        app.logger.info("EVA list file not found. Running initial update...")
+        run_eva_list_update_task()
+
     # Initialize and start the scheduler
     scheduler = BackgroundScheduler()
     scheduler.add_job(
@@ -409,6 +425,13 @@ if __name__ == "__main__":
         trigger=CronTrigger(hour=3, minute=0),  # Run at 3:00 AM every day
         id="daily_data_import",
         name="Daily Data Import",
+    )
+
+    scheduler.add_job(
+        run_eva_list_update_task,
+        trigger=CronTrigger(hour=2, minute=0),  # Run at 2:00 AM every day
+        id="eva_list_update",
+        name="EVA List Update",
     )
 
     scheduler.start()

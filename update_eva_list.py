@@ -1,3 +1,4 @@
+import logging
 import os
 import time
 from pathlib import Path
@@ -6,10 +7,16 @@ import pandas as pd
 import requests
 from requests.exceptions import RequestException
 
+logger = logging.getLogger(__name__)
 
-def fetch_and_process_stations(api_key, client_id, categories="1-2", max_retries=5):
+
+def fetch_and_process_stations(
+    api_key, client_id, data_dir, categories="1-2", max_retries=5
+):
     # API configuration
-    base_url = "https://apis.deutschebahn.com/db-api-marketplace/apis/station-data/v2/stations"
+    base_url = (
+        "https://apis.deutschebahn.com/db-api-marketplace/apis/station-data/v2/stations"
+    )
     headers = {
         "DB-Api-Key": api_key,
         "DB-Client-Id": client_id,
@@ -22,11 +29,13 @@ def fetch_and_process_stations(api_key, client_id, categories="1-2", max_retries
     # Attempt API request with retries
     for attempt in range(max_retries):
         try:
-            response = requests.get(base_url, headers=headers, params=params, timeout=10)
+            response = requests.get(
+                base_url, headers=headers, params=params, timeout=10
+            )
             response.raise_for_status()
 
             if attempt > 0:
-                print(f"Success after {attempt} attempts.")
+                logger.info(f"Success after {attempt} attempts.")
 
             # Process the JSON response
             json_data = response.json()
@@ -54,44 +63,67 @@ def fetch_and_process_stations(api_key, client_id, categories="1-2", max_retries
                 }
                 stations.append(station_data)
 
-            # Create and return DataFrame
+            # Create DataFrame
             df = pd.DataFrame(stations)
-            return df.sort_values("name", ascending=True)
+            df = df.sort_values("name", ascending=True)
+
+            # Ensure data directory exists
+            data_dir = Path(data_dir)
+            data_dir.mkdir(parents=True, exist_ok=True)
+
+            # Save to CSV
+            output_file = data_dir / "current_eva_list.csv"
+            df.to_csv(
+                output_file,
+                index=False,
+                quoting=2,
+                quotechar='"',
+            )
+            logger.info(
+                f"Successfully processed {len(df)} stations and saved to {output_file}"
+            )
+            return True
 
         except (RequestException, ConnectionError) as e:
-            print(f"Attempt {attempt + 1} failed: {e}")
+            logger.error(f"Attempt {attempt + 1} failed: {e}")
             if attempt < max_retries - 1:
-                print("Retrying in 2 seconds...")
+                logger.info("Retrying in 2 seconds...")
                 time.sleep(2)
             else:
-                print(f"Failed to fetch data after {max_retries} attempts")
-                return None
+                logger.error(f"Failed to fetch data after {max_retries} attempts")
+                return False
 
         finally:
             time.sleep(1 / 60)  # Rate limiting
 
-    return None
+    return False
+
+
+def run_eva_list_update(api_key, client_id, data_dir):
+    """Run the EVA list update process."""
+    logger.info("Starting EVA list update process...")
+    try:
+        success = fetch_and_process_stations(api_key, client_id, data_dir)
+        if success:
+            logger.info("EVA list update completed successfully")
+        else:
+            logger.error("EVA list update failed")
+    except Exception as e:
+        logger.error(f"Unexpected error during EVA list update process: {str(e)}")
 
 
 if __name__ == "__main__":
+    # Set up logging
+    logging.basicConfig(level=logging.INFO)
+
     # Get API credentials from environment variables
     api_key = os.getenv("API_KEY")
     client_id = os.getenv("CLIENT_ID")
+    data_dir = os.getenv("DATA_DIR", "data")
 
     if not api_key or not client_id:
-        print("Error: API_KEY and CLIENT_ID environment variables must be set")
+        logger.error("Error: API_KEY and CLIENT_ID environment variables must be set")
         exit(1)
 
-    # Fetch and process the data
-    df = fetch_and_process_stations(api_key, client_id)
-
-    if df is not None:
-        df.to_csv(
-            Path("monthly_data_releases") / "current_eva_list.csv",
-            index=False,
-            quoting=2,
-            quotechar='"',
-        )
-        print(f"Successfully processed {len(df)} stations")
-    else:
-        print("Failed to fetch and process station data")
+    # Run the update
+    run_eva_list_update(api_key, client_id, data_dir)
