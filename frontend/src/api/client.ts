@@ -30,4 +30,10 @@ export const api = {
 		if (!response.ok) throw new Error("Failed to fetch train arrivals");
 		return response.json();
 	},
+
+	async getLastImport(): Promise<{ lastImport: string | null }> {
+		const response = await fetch(`${API_BASE_URL}/lastImport`);
+		if (!response.ok) throw new Error("Failed to fetch last import time");
+		return response.json();
+	},
 };

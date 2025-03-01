@@ -370,6 +370,28 @@ def trigger_import():
         return jsonify({"status": "error", "error": str(e)}), 500
 
 
+@app.route("/api/lastImport", methods=["GET"])
+def last_import():
+    try:
+        conn = get_db_connection()
+        try:
+            with conn.cursor() as cur:
+                cur.execute("SELECT MAX(date) FROM processed_dates")
+                last_import_date = cur.fetchone()[0]
+                return jsonify(
+                    {
+                        "lastImport": (
+                            last_import_date.isoformat() if last_import_date else None
+                        )
+                    }
+                )
+        finally:
+            conn.close()
+    except Exception as e:
+        app.logger.error(f"Error getting last import date: {str(e)}")
+        return jsonify({"error": "Internal server error"}), 500
+
+
 # Error handlers
 @app.errorhandler(429)
 def ratelimit_handler(e):

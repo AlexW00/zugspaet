@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from './api/client';
 import type { TrainArrival } from './api/types';
+import { Footer } from './components/Footer';
 import { LanguageToggle } from './components/LanguageToggle';
 import { SearchableSelect } from './components/SearchableSelect';
 import { TrainArrivalsTable } from './components/TrainArrivalsTable';
@@ -210,6 +211,7 @@ function App() {
           </div>
         </div>
       </main>
+      <Footer />
     </div>
   );
 }

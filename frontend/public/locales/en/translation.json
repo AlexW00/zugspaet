@@ -1,11 +1,14 @@
 {
 	"app": {
-		"title": "Zugspät.de"
+		"title": "Zugspaet.de"
 	},
 	"language": {
 		"en": "English",
 		"de": "German",
 		"select": "Select language"
+	},
+	"footer": {
+		"lastImport": "Last data import: {{date}}"
 	},
 	"form": {
 		"station": {
@@ -20,7 +23,8 @@
 	"errors": {
 		"loadStations": "Failed to load stations",
 		"loadTrains": "Failed to load trains",
-		"loadArrivals": "Failed to load train arrivals"
+		"loadArrivals": "Failed to load train arrivals",
+		"loadLastImport": "Failed to load last import time"
 	},
 	"trainSummary": {
 		"title": "Train Summary",

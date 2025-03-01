@@ -1,11 +1,14 @@
 {
 	"app": {
-		"title": "Zugspät.de"
+		"title": "Zugspaet.de"
 	},
 	"language": {
 		"en": "Englisch",
 		"de": "Deutsch",
 		"select": "Sprache auswählen"
+	},
+	"footer": {
+		"lastImport": "Letzte Datenaktualisierung: {{date}}"
 	},
 	"form": {
 		"station": {
@@ -20,7 +23,8 @@
 	"errors": {
 		"loadStations": "Fehler beim Laden der Bahnhöfe",
 		"loadTrains": "Fehler beim Laden der Züge",
-		"loadArrivals": "Fehler beim Laden der Zugankunftszeiten"
+		"loadArrivals": "Fehler beim Laden der Zugankunftszeiten",
+		"loadLastImport": "Fehler beim Laden der letzten Aktualisierungszeit"
 	},
 	"trainSummary": {
 		"title": "Zugübersicht",
