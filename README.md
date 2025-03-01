@@ -53,7 +53,7 @@ Zu\[g\]spät (a play on "Zug" [train] and "spät" [late]) is a data collection a
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/yourusername/zugspaet.git
+   git clone https://github.com/AlexW00/zugspaet.git
    cd zugspaet
    ```
 
