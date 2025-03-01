@@ -5,9 +5,11 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue.svg)](https://www.postgresql.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-Have you ever wondered if the train you booked will be late? Unfortunately, Deutsche Bahn does not offer any way to check the historical delay statistics for a specific train. This is where [Zugspät]([url](https://zugspaet.de/)) comes in.
+Have you ever wondered if the train you booked will be late? Unfortunately, Deutsche Bahn does not offer any way to check the historical delay statistics for a specific train. This is where [Zugspät](https://zugspaet.de/) comes in.
 
 Zugspät is a webapp that tracks and analyzes Deutsche Bahn train delays using data from the DB API. View delay statistics and patterns for any major German train station.
+
+Check it out: https://zugspaet.de/
 
 https://github.com/user-attachments/assets/9c3b25fc-0315-4f0e-a164-3d6ce205bda5
 
