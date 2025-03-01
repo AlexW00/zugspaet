@@ -240,7 +240,9 @@ def import_data(data_dir=None, alternative_station_names=None, specific_date=Non
     Returns:
         list: List of processed date strings
     """
-    data_dir = Path(data_dir or DATA_DIR / "xml")
+    data_dir = Path(data_dir or DATA_DIR)
+    # join it with xml
+    data_dir = data_dir / "xml"
     processed_dates = []
 
     if not data_dir.exists():
