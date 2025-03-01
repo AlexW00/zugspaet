@@ -1,4 +1,4 @@
-# Zugspät
+# 🚂 Zugspät
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-4.9-blue.svg)](https://www.typescriptlang.org/)
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/)
@@ -9,7 +9,7 @@ Have you ever wondered if the train you booked will be late? Unfortunately, Deut
 
 Zugspät is a webapp that tracks and analyzes Deutsche Bahn train delays using data from the DB API. View delay statistics and patterns for any major German train station.
 
-![Zugspät Screenshot](public/screenshot.png)
+https://github.com/user-attachments/assets/b741eb6f-6f07-4176-a17a-37e3a82394df
 
 ## Features
 
