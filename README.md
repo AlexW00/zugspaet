@@ -1,15 +1,17 @@
-# Zugspät
+# 🚂 Zugspät
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-4.9-blue.svg)](https://www.typescriptlang.org/)
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue.svg)](https://www.postgresql.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-Have you ever wondered if the train you booked will be late? Unfortunately, Deutsche Bahn does not offer any way to check the historical delay statistics for a specific train. This is where Zugspät comes in.
+Have you ever wondered if the train you booked will be late? Unfortunately, Deutsche Bahn does not offer any way to check the historical delay statistics for a specific train. This is where [Zugspät](https://zugspaet.de/) comes in.
 
 Zugspät is a webapp that tracks and analyzes Deutsche Bahn train delays using data from the DB API. View delay statistics and patterns for any major German train station.
 
-![Zugspät Screenshot](public/screenshot.png)
+Check it out: https://zugspaet.de/
+
+https://github.com/user-attachments/assets/9c3b25fc-0315-4f0e-a164-3d6ce205bda5
 
 ## Features
 
@@ -30,11 +32,11 @@ Zu\[g\]spät (a play on "Zug" [train] and "spät" [late]) is a data collection a
 
 ## Tech Stack
 
-- **Frontend**: TypeScript, Vue.js, Tailwind CSS
-- **Backend**: Python, FastAPI
-- **Database**: PostgreSQL 16
+- **Frontend**: TypeScript, React, Tailwind CSS
+- **Backend**: Python, Flask
+- **Database**: PostgreSQL
 - **Infrastructure**: Deployed via Dokploy on a Hetzner VM
-- **Data Processing**: Custom Python scripts (adjusted from [deutsche-bahn-data](https://github.com/piebro/deutsche-bahn-data)
+- **Data Processing**: Custom Python scripts (forked from [deutsche-bahn-data](https://github.com/piebro/deutsche-bahn-data))
 
 ## Development
 
