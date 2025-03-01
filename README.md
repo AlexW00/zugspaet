@@ -1,77 +1,71 @@
-# Deutsche Bahn Data
+# Zugspät
 
-This is a repository with accumulated public data from "Deutsche Bahn", the biggest german train company. The data is fetched and saved from the public DB API 4 times a day using github actions. The data is used to create a [website](https://piebro.github.io/deutsche-bahn-statistics/questions) with statistics about train delays and canceled trains.
+## TL;DR
 
-## Data Collection
+A web application that tracks and analyzes Deutsche Bahn train delays using historical data from the DB API. View delay statistics and patterns for any major German train station.
 
-The [timetables-api](https://developers.deutschebahn.com/db-api-marketplace/apis/product/timetables) is used to collect the raw data. It's free to query the api up to 60 times per seconde and the data is licensed as [(CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/).
+## Description
 
-The [timetable-plan-api](https://developers.deutschebahn.com/db-api-marketplace/apis/product/timetables/api/26494#/Timetables_10213/operation/%2Fplan%2F{evaNo}%2F{date}%2F{hour}/get) is used to get the planned timetable for a station at a specific hour and day. The [timetable-changes-api](https://developers.deutschebahn.com/db-api-marketplace/apis/product/timetables/api/26494#/Timetables_10213/operation/%2Ffchg%2F{evaNo}/get) is used to get all change. This API is queried every 6 hours to not miss any changes.
+Zugspät (a play on "Zug" [train] and "spät" [late]) is a data collection and visualization platform that helps understand Deutsche Bahn train delays. It:
 
-The API is queried using the evas from the biggest train stations To get the evas, the [Station Data API](https://developers.deutschebahn.com/db-api-marketplace/apis/product/stada) is used to get all station with [category](https://en.wikipedia.org/wiki/German_railway_station_categories) 1 or 2. The responses are saved in the `data` folder. Each day is a new subfolder and the suffix of each file hour in UTS time when the change request was made or the time of the planned train schedule.
+- Fetches real-time train data from Deutsche Bahn's API every 3 hours
+- Stores historical delay information in a PostgreSQL database
+- Provides a modern web interface to explore delay statistics by station
+- Visualizes delay patterns and trends over time
+- Supports multiple languages through i18n
 
-You can look at the api using the website https://editor.swagger.io/ together with OpenAPI Documentation you can download from [here](https://developers.deutschebahn.com/db-api-marketplace/apis/product/timetables/api/26494#/Timetables_10213/overview).
+## Development
 
-An example curl command to query the plan api:
-```bash
-curl -s -H "DB-Api-Key: $API_KEY" -H "DB-Client-Id: $CLIENT_ID" -H "accept: application/xml" "https://apis.deutschebahn.com/db-api-marketplace/apis/timetables/v1/plan/08000260/$(date +"%y%m%d")/$(date +"%H")"
+### Prerequisites
+
+- Python 3.11+
+- Node.js 20+
+- PostgreSQL 16
+- Deutsche Bahn API credentials (API key and Client ID)
+
+### Environment Setup
+
+1. Clone the repository
+2. Create a `.env` file with the following variables:
+
+```
+API_KEY=your_db_api_key
+CLIENT_ID=your_db_client_id
+PRIVATE_API_KEY=your_private_api_key
+POSTGRES_PASSWORD=your_db_password
+BASE_URL=http://localhost:5000
 ```
 
-## Database Column Descriptions
+### Running with Docker
 
-The database contains the following columns that track train schedules, delays, and changes:
+```bash
+docker-compose up
+```
 
-### Core Information
-- `station`: String - The name of the station where the train stop occurs
-- `train_name`: String - The identifier of the train, combining train type and number (e.g., "IC 123" or "RE 10")
-- `train_type`: String - The type of train service (e.g., "IC", "ICE", "EC", "RE")
-- `final_destination_station`: String - The final destination station of the train's journey
+### Running Locally
 
-### Timing Information
-- `delay_in_min`: Integer - The delay in minutes (calculated from departure delay if available, otherwise arrival delay)
-- `time`: Timestamp - The effective time of the train stop (uses departure time if available, otherwise arrival time)
-- `arrival_planned_time`: Timestamp - The scheduled arrival time at the station
-- `arrival_change_time`: Timestamp - The actual/modified arrival time. If no changes occurred, equals the planned time
-- `departure_planned_time`: Timestamp - The scheduled departure time from the station
-- `departure_change_time`: Timestamp - The actual/modified departure time. If no changes occurred, equals the planned time
+1. Set up the Python environment:
 
-### Status Information
-- `is_canceled`: Boolean - Indicates whether the train stop was canceled (true) or not (false)
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
 
-### Train Line Information
-- `train_line_ride_id`: String - Unique identifier for a specific train journey
-- `train_line_station_num`: Integer - The sequential number of this station stop within the train's journey
+2. Set up the frontend:
 
+```bash
+cd frontend
+npm install
+npm run build
+```
 
-## Setup
+3. Start the server:
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/piebro/deutsche-bahn-data.git
-   cd deutsche-bahn-data
-   ```
+```bash
+python server.py
+```
 
-2. Create and activate a virtual environment:
-   ```bash
-   python3 -m venv .venv
-   source .venv/bin/activate
-   ```
+## Credits
 
-3. Install the required dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. Create a monthly data release:
-   ```bash
-   python create_monthly_data_release.py "YYYY-MM"
-   ```
-   Replace `YYYY-MM` with the desired year and month.
-
-## Contributing
-
-Contributions are welcome. Open an Issue if you want to report a bug, have an idea or want to propose a change.
-
-## License
-
-All code in this project is licensed under the MIT License. The [data](https://developers.deutschebahn.com/db-api-marketplace/apis/product/timetables) is licensed under [Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/) by Deutsche Bahn.
+Forked from [deutsche-bahn-data](https://github.com/piebro/deutsche-bahn-data) by [piebro](https://github.com/piebro) - a collection of Python scripts to fetch and store Deutsche Bahn train data. Without this project, Zugspät would not be possible.
