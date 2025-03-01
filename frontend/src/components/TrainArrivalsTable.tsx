@@ -78,7 +78,7 @@ const getStatusText = (arrival: TrainArrival, t: (key: string) => string) => {
 
 export function TrainArrivalsTable({ arrivals, isLoading = false }: TrainArrivalsTableProps) {
   const { t } = useTranslation();
-  const [sortConfig, setSortConfig] = useState<SortConfig>({ field: 'time', direction: 'asc' });
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ field: 'time', direction: 'desc' });
 
   if (isLoading) {
     return <Skeleton />;
@@ -147,7 +147,10 @@ export function TrainArrivalsTable({ arrivals, isLoading = false }: TrainArrival
           {sortedArrivals.map((arrival) => (
             <tr key={`${arrival.time}-${arrival.finalDestinationStation}`}>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {new Date(arrival.time).toLocaleTimeString('de-DE', {
+                {new Date(arrival.time).toLocaleString('de-DE', {
+                  year: 'numeric',
+                  month: '2-digit',
+                  day: '2-digit',
                   hour: '2-digit',
                   minute: '2-digit',
                 })}
