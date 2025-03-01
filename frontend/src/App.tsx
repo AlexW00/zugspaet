@@ -4,6 +4,7 @@ import { api } from './api/client';
 import type { TrainArrival } from './api/types';
 import { Footer } from './components/Footer';
 import { LanguageToggle } from './components/LanguageToggle';
+import { MobileMenu } from './components/MobileMenu';
 import { SearchableSelect } from './components/SearchableSelect';
 import { TrainArrivalsTable } from './components/TrainArrivalsTable';
 import { TrainSummaryPanel } from './components/TrainSummaryPanel';
@@ -51,6 +52,7 @@ function App() {
   const [stations, setStations] = useState<string[]>([]);
   const [trains, setTrains] = useState<string[]>([]);
   const [arrivals, setArrivals] = useState<TrainArrival[]>([]);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   const { selectedStation, selectedTrain, updateStation, updateTrain } = useUrlParams();
   
@@ -132,13 +134,14 @@ function App() {
       <header className="bg-db-red-600 shadow">
         <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center">
-            <h1 className="text-3xl font-bold text-white">
+            <h1 className="text-3xl font-bold text-white truncate flex-shrink">
               <a href="/" className="hover:text-gray-100 transition-colors inline-flex items-center">
                 <img src="/train-front-white.svg" alt="Train icon" className="w-8 h-8 mr-2" />
-                {t('app.title', 'Will I be late?')}
+                <span className="truncate">{t('app.title', 'Zugspaet.de')}</span>
               </a>
             </h1>
-            <div className="flex items-center space-x-4">
+            {/* Desktop navigation */}
+            <div className="hidden md:flex items-center space-x-4">
               <a
                 href="https://github.com/AlexW00/zugspaet"
                 target="_blank"
@@ -151,6 +154,10 @@ function App() {
                 GitHub
               </a>
               <LanguageToggle />
+            </div>
+            {/* Mobile menu */}
+            <div className="relative md:hidden">
+              <MobileMenu isOpen={isMobileMenuOpen} setIsOpen={setIsMobileMenuOpen} />
             </div>
           </div>
         </div>
