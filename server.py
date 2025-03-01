@@ -25,7 +25,13 @@ load_dotenv()
 is_production = os.getenv("PRODUCTION", "false").lower() == "true"
 log_level = logging.WARNING if is_production else logging.INFO
 
+# Configure all loggers
 logging.basicConfig(level=log_level)
+
+# Explicitly set werkzeug logger level
+werkzeug_logger = logging.getLogger("werkzeug")
+werkzeug_logger.setLevel(log_level)
+
 # Create logs directory if it doesn't exist
 Path("logs").mkdir(exist_ok=True)
 # Create file handler
@@ -446,17 +452,17 @@ if __name__ == "__main__":
     )
 
     scheduler.add_job(
-        run_data_import,
-        trigger=CronTrigger(hour=3, minute=0),  # Run at 3:00 AM every day
-        id="daily_data_import",
-        name="Daily Data Import",
+        run_eva_list_update_task,
+        trigger=CronTrigger(hour=12, minute=0),
+        id="eva_list_update",
+        name="EVA List Update",
     )
 
     scheduler.add_job(
-        run_eva_list_update_task,
-        trigger=CronTrigger(hour=2, minute=0),  # Run at 2:00 AM every day
-        id="eva_list_update",
-        name="EVA List Update",
+        run_data_import,
+        trigger=CronTrigger(hour=23, minute=55),  # Run at the end of the day
+        id="daily_data_import",
+        name="Daily Data Import",
     )
 
     scheduler.start()
@@ -466,4 +472,5 @@ if __name__ == "__main__":
     app.run(
         host="0.0.0.0",
         port=5000,
+        debug=not is_production,  # Disable debug mode in production
     )
