@@ -133,7 +133,8 @@ function App() {
         <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center">
             <h1 className="text-3xl font-bold text-white">
-              <a href="/" className="hover:text-gray-100 transition-colors">
+              <a href="/" className="hover:text-gray-100 transition-colors inline-flex items-center">
+                <img src="/train-front-white.svg" alt="Train icon" className="w-8 h-8 mr-2" />
                 {t('app.title', 'Will I be late?')}
               </a>
             </h1>
