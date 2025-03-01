@@ -21,8 +21,11 @@ from update_eva_list import run_eva_list_update
 
 load_dotenv()
 
-# Set up logging
-logging.basicConfig(level=logging.INFO)
+# Set up logging based on environment
+is_production = os.getenv("PRODUCTION", "false").lower() == "true"
+log_level = logging.WARNING if is_production else logging.INFO
+
+logging.basicConfig(level=log_level)
 # Create logs directory if it doesn't exist
 Path("logs").mkdir(exist_ok=True)
 # Create file handler
@@ -32,7 +35,7 @@ file_handler.setFormatter(
         "%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]"
     )
 )
-file_handler.setLevel(logging.INFO)
+file_handler.setLevel(log_level)
 
 # Load environment variables from .env file
 
@@ -112,7 +115,7 @@ CORS(
 
 # Add file handler to Flask logger
 app.logger.addHandler(file_handler)
-app.logger.setLevel(logging.INFO)
+app.logger.setLevel(log_level)
 
 # Configure rate limiting
 limiter = Limiter(
