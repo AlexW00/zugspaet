@@ -442,7 +442,7 @@ if __name__ == "__main__":
         run_eva_list_update_task()
 
     # Initialize and start the scheduler
-    scheduler = BackgroundScheduler()
+    scheduler = BackgroundScheduler(timezone="Europe/Berlin")
     scheduler.add_job(
         run_data_fetch,
         trigger=CronTrigger(hour="*/3"),
