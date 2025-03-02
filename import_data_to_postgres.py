@@ -1,4 +1,6 @@
 import json
+import os
+import shutil
 import sys
 import xml.etree.ElementTree as ET
 from datetime import datetime
@@ -150,12 +152,30 @@ def get_fchg_db(date_folders):
     return out_df
 
 
+def delete_date_folder(date_folder):
+    """Delete a date folder and all its contents if deletion is enabled."""
+    should_delete = os.getenv("DELETE_XML_AFTER_IMPORT", "false").lower() == "true"
+    if not should_delete:
+        print(
+            f"Skipping deletion of folder {date_folder} (deletion disabled by configuration)"
+        )
+        return
+
+    try:
+        shutil.rmtree(date_folder)
+        print(f"Successfully deleted folder: {date_folder}")
+    except Exception as e:
+        print(f"Error deleting folder {date_folder}: {str(e)}")
+
+
 def process_date_folder(date_folder, alternative_station_names, conn):
     """Process a single date folder and insert its data into the database."""
     date_str = date_folder.name
 
     if is_date_processed(conn, date_str):
         print(f"Date {date_str} has already been processed, skipping...")
+        # Delete the folder since data is already in database
+        delete_date_folder(date_folder)
         return
 
     print(f"Processing data for date: {date_str}")
@@ -224,6 +244,9 @@ def process_date_folder(date_folder, alternative_station_names, conn):
     # Mark the date as processed
     mark_date_as_processed(conn, date_str)
     print(f"Successfully processed and stored data for {date_str}")
+
+    # Delete the folder since data is now in database
+    delete_date_folder(date_folder)
 
 
 def import_data(
