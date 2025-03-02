@@ -258,10 +258,6 @@ def import_data(data_dir=None, alternative_station_names=None, specific_date=Non
         with alt_station_file.open("r") as f:
             alternative_station_names = json.load(f)
 
-    # Initialize the database (create tables if they don't exist)
-    print("Initializing database...")
-    init_database()
-
     # Get database connection
     conn = get_db_connection()
     try:

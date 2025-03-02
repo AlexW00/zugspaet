@@ -14,7 +14,7 @@ from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
-from db_utils import get_db_connection
+from db_utils import get_db_connection, init_database
 from fetch_data import fetch_data
 from import_data_to_postgres import import_data
 from update_eva_list import run_eva_list_update
@@ -42,6 +42,10 @@ file_handler.setFormatter(
     )
 )
 file_handler.setLevel(log_level)
+
+# Initialize database schema
+print("Initializing database schema...")
+init_database()
 
 # Load environment variables from .env file
 
