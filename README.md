@@ -136,7 +136,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Credits
 
-Forked from [deutsche-bahn-data](https://github.com/piebro/deutsche-bahn-data) by [piebro](https://github.com/piebro) - a collection of Python scripts to fetch and store Deutsche Bahn train data. Without this project, Zugspät would not be possible.
+Forked from [deutsche-bahn-data](https://github.com/piebro/deutsche-bahn-data) by [piebro](https://github.com/piebro) - a collection of Python scripts to fetch and store Deutsche Bahn train data. Without this project, Zugspät would not be possible!
 
 ## Support
 
