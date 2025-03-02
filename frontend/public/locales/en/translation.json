@@ -44,7 +44,9 @@
 		"tooltips": {
 			"trains": "trains",
 			"minutes": "minutes",
-			"delay": "Delay"
+			"delay": "Delay",
+			"averageDelay": "Average Delay",
+			"more": "more trains"
 		}
 	},
 	"trainTable": {

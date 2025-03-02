@@ -16,6 +16,11 @@ interface TimelineDataPoint {
   time: string;
   delay: number;
   color: string;
+  rides: {
+    delay: number;
+    color: string;
+    time: string;
+  }[];
 }
 
 const getDelayColor = (delay: number) => {
@@ -64,15 +69,45 @@ export function TrainSummaryPanel({ arrivals }: TrainSummaryPanelProps) {
   // Prepare data for line chart
   const timelineData = arrivals
     .filter(a => !a.isCanceled)
-    .sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime())
-    .map(arrival => ({
-      time: new Date(arrival.time).toLocaleDateString('de-DE', {
+    .reduce((acc: { [key: string]: TimelineDataPoint }, arrival) => {
+      const dayKey = new Date(arrival.time).toLocaleDateString('de-DE', {
         month: 'numeric',
         day: 'numeric'
-      }),
-      delay: arrival.delayInMin,
-      color: getDelayColor(arrival.delayInMin)
-    }));
+      }).replace(/\.$/, ''); // Remove trailing dot
+      
+      const rideInfo = {
+        delay: arrival.delayInMin,
+        color: getDelayColor(arrival.delayInMin),
+        time: new Date(arrival.time).toLocaleTimeString('de-DE', {
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+      };
+
+      if (!acc[dayKey]) {
+        acc[dayKey] = {
+          time: dayKey,
+          delay: arrival.delayInMin,
+          color: getDelayColor(arrival.delayInMin),
+          rides: [rideInfo]
+        };
+      } else {
+        acc[dayKey].rides.push(rideInfo);
+        // Update average delay
+        const totalDelay = acc[dayKey].rides.reduce((sum, ride) => sum + ride.delay, 0);
+        acc[dayKey].delay = Math.round(totalDelay / acc[dayKey].rides.length);
+        acc[dayKey].color = getDelayColor(acc[dayKey].delay);
+      }
+      
+      return acc;
+    }, {});
+
+  const groupedTimelineData = Object.values(timelineData)
+    .sort((a, b) => {
+      const dateA = a.time.split('.').reverse().join('');
+      const dateB = b.time.split('.').reverse().join('');
+      return dateA.localeCompare(dateB);
+    });
 
   return (
     <div className="mt-6 mb-8 bg-white rounded-lg shadow p-6">
@@ -141,7 +176,7 @@ export function TrainSummaryPanel({ arrivals }: TrainSummaryPanelProps) {
           <h3 className="text-sm font-medium text-gray-700 mb-2">{t('trainSummary.delayTimeline')}</h3>
           <div className="flex-grow">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={timelineData} margin={{ right: 30, bottom: 30 }}>
+              <LineChart data={groupedTimelineData} margin={{ right: 30, bottom: 30 }}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis
                   dataKey="time"
@@ -149,16 +184,56 @@ export function TrainSummaryPanel({ arrivals }: TrainSummaryPanelProps) {
                   angle={-45}
                   textAnchor="end"
                   height={60}
-                  interval={Math.ceil(timelineData.length / 8)}
+                  interval={Math.ceil(groupedTimelineData.length / 8)}
                 />
                 <YAxis
                   tick={{ fontSize: 12 }}
                   label={{ value: t('trainSummary.delayMinutes'), angle: -90, position: 'insideLeft', offset: -10 }}
                 />
                 <Tooltip
-                  contentStyle={{ backgroundColor: 'white', border: '1px solid #ccc' }}
-                  labelStyle={{ fontSize: 12 }}
-                  formatter={(value: number) => [`${value} ${t('trainSummary.tooltips.minutes')}`, t('trainSummary.tooltips.delay')]}
+                  contentStyle={{ backgroundColor: 'white', border: '1px solid #ccc', padding: '10px' }}
+                  labelStyle={{ fontSize: 12, fontWeight: 'bold', marginBottom: '8px' }}
+                  formatter={(value: any, name: string, props: any) => {
+                    if (!props?.payload) return [value, name];
+                    const rides = props.payload.rides;
+                    if (!rides) return [`${value} ${t('trainSummary.tooltips.minutes')}`, t('trainSummary.tooltips.delay')];
+                    
+                    return [
+                      <div key="tooltip-content">
+                        <div style={{ marginBottom: '8px' }}>
+                          {t('trainSummary.tooltips.averageDelay')}: {value} {t('trainSummary.tooltips.minutes')}
+                        </div>
+                        <div style={{ fontSize: '11px' }}>
+                          {rides.slice(0, 5).map((ride: { time: string; delay: number; color: string }, idx: number) => (
+                            <div key={idx} style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
+                              <div
+                                style={{
+                                  width: '8px',
+                                  height: '8px',
+                                  borderRadius: '50%',
+                                  backgroundColor: ride.color,
+                                  marginRight: '6px'
+                                }}
+                              />
+                              <span>{ride.time}: {ride.delay} {t('trainSummary.tooltips.minutes')}</span>
+                            </div>
+                          ))}
+                          {rides.length > 5 && (
+                            <div style={{ 
+                              color: '#6b7280',
+                              fontSize: '10px',
+                              fontStyle: 'italic',
+                              marginTop: '2px',
+                              textAlign: 'center'
+                            }}>
+                              +{rides.length - 5} {t('trainSummary.tooltips.more')}
+                            </div>
+                          )}
+                        </div>
+                      </div>,
+                      ''
+                    ];
+                  }}
                 />
                 <Line
                   type="monotone"
@@ -170,7 +245,7 @@ export function TrainSummaryPanel({ arrivals }: TrainSummaryPanelProps) {
                       cx={cx ?? 0}
                       cy={cy ?? 0}
                       r={4}
-                      fill={getDelayColor(payload?.delay ?? 0)}
+                      fill={payload?.color ?? '#6b7280'}
                       stroke="none"
                     />
                   )}
@@ -179,7 +254,7 @@ export function TrainSummaryPanel({ arrivals }: TrainSummaryPanelProps) {
                       cx={cx ?? 0}
                       cy={cy ?? 0}
                       r={6}
-                      fill={getDelayColor(payload?.delay ?? 0)}
+                      fill={payload?.color ?? '#6b7280'}
                       stroke="white"
                       strokeWidth={2}
                     />

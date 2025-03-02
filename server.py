@@ -460,7 +460,7 @@ if __name__ == "__main__":
 
     scheduler.add_job(
         run_data_import,
-        trigger=CronTrigger(hour=23, minute=55),  # Run at the end of the day
+        trigger=CronTrigger(hour=23, minute=30),
         id="daily_data_import",
         name="Daily Data Import",
     )
