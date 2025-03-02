@@ -116,9 +116,9 @@ export function TrainArrivalsTable({ arrivals, isLoading = false }: TrainArrival
   });
 
   return (
-    <div className="overflow-x-auto">
+    <div className={`${arrivals.length > 15 ? 'h-[600px]' : ''} overflow-x-auto relative`}>
       <table className="min-w-full divide-y divide-gray-300">
-        <thead>
+        <thead className={`bg-white ${arrivals.length > 15 ? 'sticky top-0 z-10' : ''}`}>
           <tr>
             <HeaderCell
               field="time"
