@@ -226,12 +226,15 @@ def process_date_folder(date_folder, alternative_station_names, conn):
     print(f"Successfully processed and stored data for {date_str}")
 
 
-def import_data(data_dir=None, alternative_station_names=None, specific_date=None):
+def import_data(
+    xml_dir="/app/data/xml", alternative_station_names=None, specific_date=None
+):
     """
     Main function to import data that can be called directly or via command line.
 
     Args:
-        data_dir (str, optional): Path to data directory. If None, uses DATA_DIR from config.
+        xml_dir (str, optional): Path to the directory where XML files are stored.
+            If None, uses default path.
         alternative_station_names (dict, optional): Dict of alternative station names.
             If None, loads from json file.
         specific_date (str, optional): Specific date to process in YYYY-MM-DD format.
@@ -240,13 +243,10 @@ def import_data(data_dir=None, alternative_station_names=None, specific_date=Non
     Returns:
         list: List of processed date strings
     """
-    data_dir = Path(data_dir or DATA_DIR)
-    # join it with xml
-    data_dir = data_dir / "xml"
     processed_dates = []
 
-    if not data_dir.exists():
-        raise FileNotFoundError(f"Data directory {data_dir} does not exist")
+    if not xml_dir.exists():
+        raise FileNotFoundError(f"Data directory {xml_dir} does not exist")
 
     # Load alternative station names if not provided
     if alternative_station_names is None:
@@ -263,7 +263,7 @@ def import_data(data_dir=None, alternative_station_names=None, specific_date=Non
     try:
         # If specific date is provided, only process that date
         if specific_date:
-            date_folder = data_dir / specific_date
+            date_folder = xml_dir / specific_date
             if not date_folder.exists():
                 raise FileNotFoundError(
                     f"Data folder for date {specific_date} does not exist"
@@ -273,7 +273,7 @@ def import_data(data_dir=None, alternative_station_names=None, specific_date=Non
         else:
             # Process all date folders that haven't been processed yet
             date_folders = sorted(
-                [d for d in data_dir.iterdir() if d.is_dir()],
+                [d for d in xml_dir.iterdir() if d.is_dir()],
                 key=lambda x: datetime.strptime(x.name, "%Y-%m-%d"),
             )
 

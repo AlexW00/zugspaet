@@ -102,7 +102,11 @@ def save_api_data(formatted_url, save_path, headers, prettify=True, max_retries=
 
 
 def fetch_data(
-    api_key=None, client_id=None, eva_file="current_eva_list.csv", base_data_dir="data"
+    api_key=None,
+    client_id=None,
+    eva_file="current_eva_list.csv",
+    xml_dir="/app/data/xml",
+    eva_dir="/app/data/eva",
 ):
     """
     Main function to fetch data that can be called directly or via command line.
@@ -111,7 +115,8 @@ def fetch_data(
         api_key (str, optional): DB API key. If None, will try to get from environment.
         client_id (str, optional): DB Client ID. If None, will try to get from environment.
         eva_file (str): Path to the CSV file containing EVA numbers.
-        base_data_dir (str): Base directory to store the data.
+        xml_dir (str): Path to the directory where XML files will be saved.
+        eva_dir (str): Path to the directory where EVA files will be saved.
     """
     if api_key is None or client_id is None:
         api_key, client_id = get_api_credentials()
@@ -126,10 +131,10 @@ def fetch_data(
     date_str = datetime.now().strftime("%Y-%m-%d")
     date_str_url = date_str.replace("-", "")[2:]
 
-    save_folder = Path(base_data_dir) / date_str
+    save_folder = Path(xml_dir) / date_str
     save_folder.mkdir(exist_ok=True, parents=True)
 
-    df = pd.read_csv(Path(base_data_dir) / eva_file)
+    df = pd.read_csv(Path(eva_dir) / eva_file)
     eva_list = []
     for evas in df["evas"]:
         eva_list.extend(evas.split(","))

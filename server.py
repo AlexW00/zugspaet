@@ -65,12 +65,13 @@ base_url = os.getenv("BASE_URL", "http://localhost:5000")
 if not base_url:
     raise ValueError("No Base URL provided!")
 
-data_dir = Path(os.getenv("DATA_DIR", "data"))
-if not data_dir:
-    raise ValueError("No data directory provided!")
+eva_dir = Path(os.getenv("EVA_DIR", "data"))
+if not eva_dir:
+    raise ValueError("No eva directory provided!")
 
-if not data_dir.exists():
-    data_dir.mkdir(parents=True)
+xml_dir = Path(os.getenv("XML_DIR", "data"))
+if not xml_dir:
+    raise ValueError("No xml directory provided!")
 
 
 def run_data_fetch():
@@ -80,7 +81,7 @@ def run_data_fetch():
     try:
         app.logger.info("Fetching new data...")
         save_folder = fetch_data(
-            api_key=api_key, client_id=client_id, base_data_dir=data_dir
+            api_key=api_key, client_id=client_id, xml_dir=xml_dir, eva_dir=eva_dir
         )
         app.logger.info(
             f"Data fetch completed successfully. Data saved to {save_folder}"
@@ -96,7 +97,7 @@ def run_data_import():
 
     try:
         app.logger.info("Importing data to database...")
-        processed_dates = import_data(data_dir=data_dir)
+        processed_dates = import_data(xml_dir=xml_dir)
         if processed_dates:
             app.logger.info(
                 f"Successfully processed dates: {', '.join(processed_dates)}"
@@ -112,7 +113,7 @@ def run_eva_list_update_task():
     """Run the EVA list update process."""
     app.logger.info("Starting scheduled EVA list update process...")
     try:
-        run_eva_list_update(api_key=api_key, client_id=client_id, data_dir=data_dir)
+        run_eva_list_update(api_key=api_key, client_id=client_id, eva_dir=eva_dir)
     except Exception as e:
         app.logger.error(f"Unexpected error during EVA list update process: {str(e)}")
 
@@ -319,7 +320,7 @@ def train_arrivals():
 def system_status():
     try:
         # Check data directory
-        num_date_folders = len([d for d in data_dir.glob("*") if d.is_dir()])
+        num_date_folders = len([d for d in xml_dir.glob("*") if d.is_dir()])
 
         # Check database connection and get processed dates
         conn = get_db_connection()
@@ -352,7 +353,7 @@ def trigger_fetch():
     """Manually trigger data fetch process."""
     try:
         save_folder = fetch_data(
-            api_key=api_key, client_id=client_id, base_data_dir=data_dir
+            api_key=api_key, client_id=client_id, eva_dir=eva_dir, xml_dir=xml_dir
         )
         return jsonify(
             {
@@ -370,7 +371,7 @@ def trigger_fetch():
 def trigger_import():
     """Manually trigger data import process."""
     try:
-        processed_dates = import_data(data_dir=data_dir)
+        processed_dates = import_data(xml_dir=xml_dir)
         return jsonify({"status": "success", "processed_dates": processed_dates})
     except Exception as e:
         app.logger.error(f"Error in manual data import: {str(e)}")
@@ -435,7 +436,7 @@ if __name__ == "__main__":
         os.makedirs(app.static_folder, exist_ok=True)
 
     # Check if EVA list exists and run initial update if not
-    eva_list_file = data_dir / "current_eva_list.csv"
+    eva_list_file = eva_dir / "current_eva_list.csv"
     if not eva_list_file.exists():
         app.logger.info("EVA list file not found. Running initial update...")
         run_eva_list_update_task()

@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 def fetch_and_process_stations(
-    api_key, client_id, data_dir, categories="1-2", max_retries=5
+    api_key, client_id, eva_dir="/app/data/eva", categories="1-2", max_retries=5
 ):
     # API configuration
     base_url = (
@@ -68,11 +68,11 @@ def fetch_and_process_stations(
             df = df.sort_values("name", ascending=True)
 
             # Ensure data directory exists
-            data_dir = Path(data_dir)
-            data_dir.mkdir(parents=True, exist_ok=True)
+            eva_dir = Path(eva_dir)
+            eva_dir.mkdir(parents=True, exist_ok=True)
 
             # Save to CSV
-            output_file = data_dir / "current_eva_list.csv"
+            output_file = eva_dir / "current_eva_list.csv"
             df.to_csv(
                 output_file,
                 index=False,
@@ -99,11 +99,11 @@ def fetch_and_process_stations(
     return False
 
 
-def run_eva_list_update(api_key, client_id, data_dir):
+def run_eva_list_update(api_key, client_id, eva_dir="/app/data/eva"):
     """Run the EVA list update process."""
     logger.info("Starting EVA list update process...")
     try:
-        success = fetch_and_process_stations(api_key, client_id, data_dir)
+        success = fetch_and_process_stations(api_key, client_id, eva_dir)
         if success:
             logger.info("EVA list update completed successfully")
         else:
@@ -119,11 +119,11 @@ if __name__ == "__main__":
     # Get API credentials from environment variables
     api_key = os.getenv("API_KEY")
     client_id = os.getenv("CLIENT_ID")
-    data_dir = os.getenv("DATA_DIR", "data")
+    eva_dir = os.getenv("EVA_DIR", "data")
 
     if not api_key or not client_id:
         logger.error("Error: API_KEY and CLIENT_ID environment variables must be set")
         exit(1)
 
     # Run the update
-    run_eva_list_update(api_key, client_id, data_dir)
+    run_eva_list_update(api_key, client_id, eva_dir)

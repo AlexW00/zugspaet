@@ -32,6 +32,8 @@ services:
     container_name: deutsche-bahn-app
     environment:
       - DATA_DIR=/app/data/
+      - XML_DIR=/app/data/xml/
+      - EVA_DIR=/app/data/eva/
       - DB_HOST=database
       - POSTGRES_DB=deutsche_bahn_data
       - DB_PASSWORD=$POSTGRES_PASSWORD
@@ -44,7 +46,7 @@ services:
       - "5000:5000"
     volumes:
       - $HOME/deutsche-bahn-data/xml/:/app/data/xml/
-      - $HOME/deutsche-bahn-data/eva/:/app/data/
+      - $HOME/deutsche-bahn-data/eva/:/app/data/eva/
     networks:
       postgres-network:
         aliases:
