@@ -35,3 +35,31 @@ CREATE INDEX IF NOT EXISTS idx_train_data_departure_planned ON train_data(depart
 
 -- Create some useful composite indices for common query patterns
 CREATE INDEX IF NOT EXISTS idx_train_data_station_train ON train_data(station, train_name);
+
+-- Create views for common queries
+-- View for all unique stations
+CREATE OR REPLACE VIEW v_train_stations AS
+SELECT DISTINCT station 
+FROM train_data 
+ORDER BY station;
+
+-- View for trains at a station within date range
+-- Note: This is a template view that needs to be filtered with WHERE clauses
+CREATE OR REPLACE VIEW v_station_trains AS
+SELECT DISTINCT 
+    station,
+    train_name,
+    MAX(time) as last_seen
+FROM train_data 
+GROUP BY station, train_name;
+
+-- View for train arrivals with calculated fields
+CREATE OR REPLACE VIEW v_train_arrivals AS
+SELECT 
+    station,
+    train_name,
+    delay_in_min as "delayInMin",
+    time,
+    final_destination_station as "finalDestinationStation",
+    is_canceled as "isCanceled"
+FROM train_data;

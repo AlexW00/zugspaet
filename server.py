@@ -178,13 +178,7 @@ def get_all_stations():
     conn = get_db_connection()
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
-            cur.execute(
-                """
-                SELECT DISTINCT station 
-                FROM train_data 
-                ORDER BY station
-            """
-            )
+            cur.execute("SELECT station FROM v_train_stations")
             stations = [row["station"] for row in cur.fetchall()]
             return stations
     finally:
@@ -198,12 +192,12 @@ def get_trains_for_station(station, days_cutoff=30):
         with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
             cur.execute(
                 """
-                SELECT DISTINCT train_name 
-                FROM train_data 
+                SELECT train_name 
+                FROM v_station_trains 
                 WHERE station = %s 
-                AND time >= CURRENT_DATE - interval '%s days'
+                AND last_seen >= CURRENT_DATE - interval '%s days'
                 ORDER BY train_name
-            """,
+                """,
                 (station, days_cutoff),
             )
             trains = [row["train_name"] for row in cur.fetchall()]
@@ -220,16 +214,16 @@ def get_train_arrivals(station, train_name, days_cutoff=30):
             cur.execute(
                 """
                 SELECT 
-                    delay_in_min as "delayInMin",
+                    "delayInMin",
                     time,
-                    final_destination_station as "finalDestinationStation",
-                    is_canceled as "isCanceled"
-                FROM train_data 
+                    "finalDestinationStation",
+                    "isCanceled"
+                FROM v_train_arrivals 
                 WHERE station = %s 
                 AND train_name = %s 
                 AND time >= CURRENT_DATE - interval '%s days'
                 ORDER BY time DESC
-            """,
+                """,
                 (station, train_name, days_cutoff),
             )
             arrivals = [dict(row) for row in cur.fetchall()]
