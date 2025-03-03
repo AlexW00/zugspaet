@@ -1,0 +1,6 @@
+Legal Notice
+
+Alexander Weichart
+Email: mail@weichart.de
+
+This application is not associated with Deutsche Bahn. All data has been retrieved from their official APIs in accordance with their Terms of Service.
