@@ -1,8 +1,6 @@
 # 🚂 Zugspaet
 
-[![TypeScript](https://img.shields.io/badge/TypeScript-4.9-blue.svg)](https://www.typescriptlang.org/)
-[![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue.svg)](https://www.postgresql.org/)
+[![Better Stack Badge](https://uptime.betterstack.com/status-badges/v1/monitor/1t537.svg)](https://uptime.betterstack.com/?utm_source=status_badge)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 Have you ever wondered if the Deutsche Bahn (DB) train you're about to book is usually late or on time? Unfortunately, Deutsche Bahn does not offer any way to check the historical delay statistics for a specific train. This is where [Zugspaet](https://zugspaet.de/) comes in.
