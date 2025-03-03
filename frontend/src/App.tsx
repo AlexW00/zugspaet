@@ -220,7 +220,8 @@ function App() {
         </div>
       </main>
       <Footer />
-      <div className="fixed bottom-0 right-0 p-4 text-gray-500 text-sm">
+      <div className="flex-grow"></div>
+      <div className="p-4 text-gray-500 text-sm text-center">
         <a href="/imprint.txt" className="hover:text-gray-700 transition-colors mr-4">Imprint</a>
         <a href="/legal.txt" className="hover:text-gray-700 transition-colors mr-4">Legal</a>
         <a href="/privacy.txt" className="hover:text-gray-700 transition-colors">Privacy</a>
