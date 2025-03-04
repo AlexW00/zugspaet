@@ -113,3 +113,69 @@ def validate_train_name(train_name, station):
             (station, train_name),
         )
         return cur.fetchone()[0]
+
+
+def get_filtered_arrivals(station=None, train_name=None, days_cutoff=30):
+    """Get arrival data with optional station and train filters."""
+    with db_cursor(psycopg2.extras.DictCursor) as cur:
+        query = """
+            SELECT 
+                delay_in_min,
+                time,
+                final_destination_station,
+                is_canceled,
+                station,
+                train_name
+            FROM train_data 
+            WHERE time >= CURRENT_DATE - interval '%s days'
+        """
+        params = [days_cutoff]
+
+        if station:
+            query += " AND station = %s"
+            params.append(station)
+        if train_name:
+            query += " AND train_name = %s"
+            params.append(train_name)
+
+        query += " ORDER BY time DESC"
+        cur.execute(query, params)
+        return [dict(row) for row in cur.fetchall()]
+
+
+def get_train_suggestions(station=None):
+    """Get train suggestions, optionally filtered by station."""
+    with db_cursor(psycopg2.extras.DictCursor) as cur:
+        query = """
+            SELECT DISTINCT train_name 
+            FROM train_data 
+            WHERE time >= CURRENT_DATE - interval '30 days'
+        """
+        params = []
+
+        if station:
+            query += " AND station = %s"
+            params.append(station)
+
+        query += " ORDER BY train_name"
+        cur.execute(query, params)
+        return [row["train_name"] for row in cur.fetchall()]
+
+
+def get_station_suggestions(train_name=None):
+    """Get station suggestions, optionally filtered by train."""
+    with db_cursor(psycopg2.extras.DictCursor) as cur:
+        query = """
+            SELECT DISTINCT station 
+            FROM train_data 
+            WHERE time >= CURRENT_DATE - interval '30 days'
+        """
+        params = []
+
+        if train_name:
+            query += " AND train_name = %s"
+            params.append(train_name)
+
+        query += " ORDER BY station"
+        cur.execute(query, params)
+        return [row["station"] for row in cur.fetchall()]

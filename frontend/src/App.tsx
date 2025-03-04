@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from './api/client';
 import type { TrainArrival } from './api/types';
@@ -9,14 +9,69 @@ import { SearchableSelect } from './components/SearchableSelect';
 import { TrainArrivalsTable } from './components/TrainArrivalsTable';
 import { TrainSummaryPanel } from './components/TrainSummaryPanel';
 
+// Separate the search form into its own component to prevent unnecessary re-renders
+const SearchForm = ({
+  stations,
+  trains,
+  selectedStation,
+  selectedTrain,
+  updateStation,
+  updateTrain,
+  isLoadingStations,
+  isLoadingTrains,
+}: {
+  stations: string[];
+  trains: string[];
+  selectedStation: string;
+  selectedTrain: string;
+  updateStation: (station: string) => void;
+  updateTrain: (train: string) => void;
+  isLoadingStations: boolean;
+  isLoadingTrains: boolean;
+}) => {
+  const { t } = useTranslation();
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <label htmlFor="station" className="block text-sm font-medium text-gray-700">
+          {t('form.station.label')}
+        </label>
+        <div className="mt-1">
+          <SearchableSelect
+            options={stations}
+            value={selectedStation}
+            onChange={updateStation}
+            placeholder={t('form.station.placeholder')}
+            isLoading={isLoadingStations}
+          />
+        </div>
+      </div>
+
+      <div>
+        <label htmlFor="train" className="block text-sm font-medium text-gray-700">
+          {t('form.train.label')}
+        </label>
+        <div className="mt-1">
+          <SearchableSelect
+            options={trains}
+            value={selectedTrain}
+            onChange={updateTrain}
+            placeholder={t('form.train.placeholder')}
+            isLoading={isLoadingTrains}
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
 function useUrlParams() {
-  // Get initial values from URL
   const params = new URLSearchParams(window.location.search);
   const [selectedStation, setSelectedStation] = useState(params.get('station') || '');
   const [selectedTrain, setSelectedTrain] = useState(params.get('train') || '');
 
-  // Update URL when values change
-  const updateStation = (station: string) => {
+  const updateStation = useCallback((station: string) => {
     const params = new URLSearchParams(window.location.search);
     if (station) {
       params.set('station', station);
@@ -26,9 +81,9 @@ function useUrlParams() {
     params.delete('train'); // Reset train when station changes
     window.history.replaceState({}, '', `${window.location.pathname}?${params}`);
     setSelectedStation(station);
-  };
+  }, []);
 
-  const updateTrain = (train: string) => {
+  const updateTrain = useCallback((train: string) => {
     const params = new URLSearchParams(window.location.search);
     if (train) {
       params.set('train', train);
@@ -37,7 +92,7 @@ function useUrlParams() {
     }
     window.history.replaceState({}, '', `${window.location.pathname}?${params}`);
     setSelectedTrain(train);
-  };
+  }, []);
 
   return {
     selectedStation,
@@ -57,18 +112,50 @@ function App() {
   const { selectedStation, selectedTrain, updateStation, updateTrain } = useUrlParams();
   
   const [isLoadingStations, setIsLoadingStations] = useState(true);
-  const [isLoadingTrains, setIsLoadingTrains] = useState(false);
+  const [isLoadingTrains, setIsLoadingTrains] = useState(true);
   const [isLoadingArrivals, setIsLoadingArrivals] = useState(false);
   const [error, setError] = useState('');
 
-  // Load stations on mount
+  // Store initial suggestions
+  const [initialStations, setInitialStations] = useState<string[]>([]);
+  const [initialTrains, setInitialTrains] = useState<string[]>([]);
+
+  // Load initial suggestions on mount
   useEffect(() => {
-    const loadStations = async () => {
+    const loadInitialSuggestions = async () => {
       try {
-        const data = await api.gettrain_stations();
+        const [stationsData, trainsData] = await Promise.all([
+          api.getStations(),
+          api.getTrains()
+        ]);
+        setInitialStations(stationsData);
+        setInitialTrains(trainsData);
+        setStations(stationsData);
+        setTrains(trainsData);
+      } catch {
+        setError(t('errors.loadSuggestions'));
+      } finally {
+        setIsLoadingStations(false);
+        setIsLoadingTrains(false);
+      }
+    };
+    loadInitialSuggestions();
+  }, []);
+
+  // Update station suggestions only when train selection changes
+  useEffect(() => {
+    const loadStationSuggestions = async () => {
+      if (!selectedTrain) {
+        setStations(initialStations);
+        return;
+      }
+      
+      setIsLoadingStations(true);
+      try {
+        const data = await api.getStations(selectedTrain);
         setStations(data);
         
-        // If we have a station in URL but it's not valid, clear it
+        // If current station is not in new suggestions, clear it
         if (selectedStation && !data.includes(selectedStation)) {
           updateStation('');
         }
@@ -78,23 +165,23 @@ function App() {
         setIsLoadingStations(false);
       }
     };
-    loadStations();
-  }, [t]);
+    loadStationSuggestions();
+  }, [selectedTrain, initialStations]);
 
-  // Load trains when station changes
+  // Update train suggestions only when station selection changes
   useEffect(() => {
-    if (!selectedStation) {
-      setTrains([]);
-      return;
-    }
-
-    const loadTrains = async () => {
+    const loadTrainSuggestions = async () => {
+      if (!selectedStation) {
+        setTrains(initialTrains);
+        return;
+      }
+      
       setIsLoadingTrains(true);
       try {
         const data = await api.getTrains(selectedStation);
         setTrains(data);
         
-        // If we have a train in URL but it's not valid for this station, clear it
+        // If current train is not in new suggestions, clear it
         if (selectedTrain && !data.includes(selectedTrain)) {
           updateTrain('');
         }
@@ -104,30 +191,55 @@ function App() {
         setIsLoadingTrains(false);
       }
     };
-    loadTrains();
-  }, [selectedStation, t]);
+    loadTrainSuggestions();
+  }, [selectedStation, initialTrains]);
+
+  // Memoize the arrivals loading callback
+  const loadArrivals = useCallback(async () => {
+    setIsLoadingArrivals(true);
+    setError('');
+    try {
+      const data = await api.getArrivals({
+        station: selectedStation,
+        train_name: selectedTrain
+      });
+      setArrivals(data);
+    } catch {
+      setError(t('errors.loadArrivals'));
+    } finally {
+      setIsLoadingArrivals(false);
+    }
+  }, [selectedStation, selectedTrain, t]);
 
   // Load arrivals when either station or train changes
   useEffect(() => {
-    if (!selectedStation || !selectedTrain) {
+    if (selectedStation || selectedTrain) {
+      loadArrivals();
+    } else {
       setArrivals([]);
-      return;
     }
+  }, [loadArrivals, selectedStation, selectedTrain]);
 
-    const loadArrivals = async () => {
-      setIsLoadingArrivals(true);
-      setError('');
-      try {
-        const data = await api.getTrainArrivals(selectedStation, selectedTrain);
-        setArrivals(data);
-      } catch {
-        setError(t('errors.loadArrivals'));
-      } finally {
-        setIsLoadingArrivals(false);
-      }
-    };
-    loadArrivals();
-  }, [selectedStation, selectedTrain, t]);
+  // Memoize the search form props
+  const searchFormProps = useMemo(() => ({
+    stations,
+    trains,
+    selectedStation,
+    selectedTrain,
+    updateStation,
+    updateTrain,
+    isLoadingStations,
+    isLoadingTrains,
+  }), [
+    stations,
+    trains,
+    selectedStation,
+    selectedTrain,
+    updateStation,
+    updateTrain,
+    isLoadingStations,
+    isLoadingTrains,
+  ]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -166,36 +278,7 @@ function App() {
         <div className="px-4 py-6 sm:px-0">
           <div className="bg-white rounded-lg shadow p-6">
             <div className="space-y-4">
-              <div>
-                <label htmlFor="station" className="block text-sm font-medium text-gray-700">
-                  {t('form.station.label')}
-                </label>
-                <div className="mt-1">
-                  <SearchableSelect
-                    options={stations}
-                    value={selectedStation}
-                    onChange={updateStation}
-                    placeholder={t('form.station.placeholder')}
-                    isLoading={isLoadingStations}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="train" className="block text-sm font-medium text-gray-700">
-                  {t('form.train.label')}
-                </label>
-                <div className="mt-1">
-                  <SearchableSelect
-                    options={trains}
-                    value={selectedTrain}
-                    onChange={updateTrain}
-                    placeholder={t('form.train.placeholder')}
-                    isLoading={isLoadingTrains}
-                    disabled={!selectedStation}
-                  />
-                </div>
-              </div>
+              <SearchForm {...searchFormProps} />
 
               {error && (
                 <div className="rounded-md bg-red-50 p-4">
@@ -209,12 +292,15 @@ function App() {
                 </div>
               )}
 
-              <TrainSummaryPanel arrivals={arrivals} />
-
-              <TrainArrivalsTable
-                arrivals={arrivals}
-                isLoading={isLoadingArrivals}
-              />
+              {(selectedStation || selectedTrain) && (
+                <>
+                  <TrainSummaryPanel arrivals={arrivals} />
+                  <TrainArrivalsTable
+                    arrivals={arrivals}
+                    isLoading={isLoadingArrivals}
+                  />
+                </>
+              )}
             </div>
           </div>
         </div>

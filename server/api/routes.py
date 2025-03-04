@@ -14,8 +14,9 @@ from server.db.database import (
     db_cursor,
     get_all_stations,
     get_db_connection,
-    get_train_arrivals,
-    get_trains_for_station,
+    get_filtered_arrivals,
+    get_station_suggestions,
+    get_train_suggestions,
     validate_station_name,
     validate_train_name,
 )
@@ -56,44 +57,50 @@ def train_stations():
 
 @api.route("/trains", methods=["GET"])
 def trains():
-    """Get all trains for a station."""
+    """Get all trains, optionally filtered by station."""
     station = sanitize_input(request.args.get("train_station"))
-    if not station:
-        return jsonify({"error": "Station parameter is required"}), 400
 
     try:
-        if not validate_station_name(station):
+        if station and not validate_station_name(station):
             return jsonify({"error": "Invalid station name"}), 400
 
-        trains_list = get_trains_for_station(station)
+        trains_list = get_train_suggestions(station)
         return jsonify(trains_list)
     except Exception as e:
-        logger.error(f"Error fetching trains for station {station}: {str(e)}")
+        logger.error(f"Error fetching trains: {str(e)}")
         return jsonify({"error": "Internal server error"}), 500
 
 
-@api.route("/train_arrival", methods=["GET"])
-def train_arrivals():
-    """Get arrival data for a specific train at a station."""
+@api.route("/stations", methods=["GET"])
+def stations():
+    """Get all stations, optionally filtered by train."""
+    train_name = sanitize_input(request.args.get("train_name"))
+
+    try:
+        stations_list = get_station_suggestions(train_name)
+        return jsonify(stations_list)
+    except Exception as e:
+        logger.error(f"Error fetching stations: {str(e)}")
+        return jsonify({"error": "Internal server error"}), 500
+
+
+@api.route("/arrivals", methods=["GET"])
+def arrivals():
+    """Get arrival data with optional station and train filters."""
     station = sanitize_input(request.args.get("train_station"))
     train_name = sanitize_input(request.args.get("train_name"))
 
-    if not station or not train_name:
-        return jsonify({"error": "Both station and train parameters are required"}), 400
-
     try:
-        if not validate_station_name(station):
+        if station and not validate_station_name(station):
             return jsonify({"error": "Invalid station name"}), 400
 
-        if not validate_train_name(train_name, station):
+        if train_name and station and not validate_train_name(train_name, station):
             return jsonify({"error": "Invalid train name for this station"}), 400
 
-        arrivals = get_train_arrivals(station, train_name)
+        arrivals = get_filtered_arrivals(station, train_name)
         return jsonify(arrivals)
     except Exception as e:
-        logger.error(
-            f"Error fetching arrivals for train {train_name} at station {station}: {str(e)}"
-        )
+        logger.error(f"Error fetching arrivals: {str(e)}")
         return jsonify({"error": "Internal server error"}), 500
 
 
