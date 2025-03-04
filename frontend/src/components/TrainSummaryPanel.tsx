@@ -1,9 +1,11 @@
 import { useTranslation } from 'react-i18next';
 import { CartesianGrid, Cell, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { TrainArrival } from '../api/types';
+import { Skeleton } from './Skeleton';
 
 interface TrainSummaryPanelProps {
   arrivals: TrainArrival[];
+  isLoading?: boolean;
 }
 
 interface DelayCategory {
@@ -29,8 +31,20 @@ const getDelayColor = (delay: number) => {
   return '#ef4444'; // red
 };
 
-export function TrainSummaryPanel({ arrivals }: TrainSummaryPanelProps) {
+export function TrainSummaryPanel({ arrivals, isLoading = false }: TrainSummaryPanelProps) {
   const { t } = useTranslation();
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <Skeleton type="summary" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Skeleton type="chart" />
+          <Skeleton type="chart" />
+        </div>
+      </div>
+    );
+  }
 
   if (arrivals.length === 0) {
     return null;
@@ -41,7 +55,7 @@ export function TrainSummaryPanel({ arrivals }: TrainSummaryPanelProps) {
   const activeArrivals = arrivals.filter(a => !a.is_canceled);
   const totalArrivals = activeArrivals.length;
   const avgDelay = Math.round(activeArrivals.reduce((acc, curr) => acc + curr.delay_in_min, 0) / totalArrivals);
-  
+
   // Prepare data for pie chart
   const delayCategories: DelayCategory[] = [
     {
