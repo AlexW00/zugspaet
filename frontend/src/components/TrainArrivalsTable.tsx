@@ -51,26 +51,26 @@ function HeaderCell({ field, label, currentSort, onSort }: HeaderCellProps) {
 }
 
 const getStatusStyle = (arrival: TrainArrival) => {
-  if (arrival.isCanceled) {
+  if (arrival.is_canceled) {
     return 'bg-gray-100 text-gray-800'; // gray for canceled
   }
-  if (arrival.delayInMin <= 5) {
+  if (arrival.delay_in_min <= 5) {
     return 'bg-green-100 text-green-800'; // green for on time
   }
-  if (arrival.delayInMin <= 15) {
+  if (arrival.delay_in_min <= 15) {
     return 'bg-yellow-100 text-yellow-800'; // yellow for slight delay
   }
   return 'bg-red-100 text-red-800'; // red for major delay
 };
 
 const getStatusText = (arrival: TrainArrival, t: (key: string) => string) => {
-  if (arrival.isCanceled) {
+  if (arrival.is_canceled) {
     return t('trainTable.status.canceled');
   }
-  if (arrival.delayInMin <= 5) {
+  if (arrival.delay_in_min <= 5) {
     return t('trainTable.status.onTime');
   }
-  if (arrival.delayInMin <= 15) {
+  if (arrival.delay_in_min <= 15) {
     return t('trainTable.status.slightDelay');
   }
   return t('trainTable.status.majorDelay');
@@ -107,9 +107,9 @@ export function TrainArrivalsTable({ arrivals, isLoading = false }: TrainArrival
       case 'time':
         return direction * (new Date(a.time).getTime() - new Date(b.time).getTime());
       case 'delay':
-        return direction * (a.delayInMin - b.delayInMin);
+        return direction * (a.delay_in_min - b.delay_in_min);
       case 'destination':
-        return direction * a.finalDestinationStation.localeCompare(b.finalDestinationStation);
+        return direction * a.final_destination_station.localeCompare(b.final_destination_station);
       default:
         return 0;
     }
@@ -145,7 +145,7 @@ export function TrainArrivalsTable({ arrivals, isLoading = false }: TrainArrival
         </thead>
         <tbody className="divide-y divide-gray-200">
           {sortedArrivals.map((arrival) => (
-            <tr key={`${arrival.time}-${arrival.finalDestinationStation}`}>
+            <tr key={`${arrival.time}-${arrival.final_destination_station}`}>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                 {new Date(arrival.time).toLocaleString('de-DE', {
                   year: 'numeric',
@@ -158,18 +158,18 @@ export function TrainArrivalsTable({ arrivals, isLoading = false }: TrainArrival
               <td className="px-6 py-4 whitespace-nowrap text-sm">
                 <span
                   className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
-                    arrival.delayInMin <= 5
+                    arrival.delay_in_min <= 5
                       ? 'bg-green-100 text-green-800'
-                      : arrival.delayInMin <= 15
+                      : arrival.delay_in_min <= 15
                       ? 'bg-yellow-100 text-yellow-800'
                       : 'bg-red-100 text-red-800'
                   }`}
                 >
-                  {arrival.delayInMin} min
+                  {arrival.delay_in_min} min
                 </span>
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {arrival.finalDestinationStation}
+                {arrival.final_destination_station}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm">
                 <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${getStatusStyle(arrival)}`}>

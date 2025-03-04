@@ -25,8 +25,11 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Create necessary directories
+RUN mkdir -p logs data frontend/dist
+
 # Copy application files
-COPY *.py ./
+COPY server/ ./server/
 COPY migrations/ ./migrations/
 COPY *.json ./
 COPY *.csv ./
@@ -35,11 +38,11 @@ COPY *.csv ./
 COPY --from=frontend-builder /app/frontend/dist/ ./frontend/dist/
 
 # Set environment variables
-ENV FLASK_APP=server.py
+ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
 
-# Create logs directory
-RUN mkdir -p logs
+# Create data directories
+RUN mkdir -p data/xml data/eva
 
 # Command to run the server
-CMD ["python", "server.py"] 
+CMD ["python", "-m", "server.app"] 

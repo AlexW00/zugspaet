@@ -8,7 +8,7 @@
 		"select": "Select language"
 	},
 	"footer": {
-		"lastImport": "Last data import: {{date}}"
+		"last_import": "Last data import: {{date}}"
 	},
 	"form": {
 		"station": {

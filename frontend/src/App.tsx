@@ -65,7 +65,7 @@ function App() {
   useEffect(() => {
     const loadStations = async () => {
       try {
-        const data = await api.getTrainStations();
+        const data = await api.gettrain_stations();
         setStations(data);
         
         // If we have a station in URL but it's not valid, clear it

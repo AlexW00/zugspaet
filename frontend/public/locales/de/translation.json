@@ -8,7 +8,7 @@
 		"select": "Sprache auswählen"
 	},
 	"footer": {
-		"lastImport": "Letzte Datenaktualisierung: {{date}}"
+		"last_import": "Letzte Datenaktualisierung: {{date}}"
 	},
 	"form": {
 		"station": {

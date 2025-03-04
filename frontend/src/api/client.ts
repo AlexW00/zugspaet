@@ -4,15 +4,15 @@ const API_BASE_URL =
 	import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
 
 export const api = {
-	async getTrainStations(): Promise<string[]> {
-		const response = await fetch(`${API_BASE_URL}/trainStations`);
+	async gettrain_stations(): Promise<string[]> {
+		const response = await fetch(`${API_BASE_URL}/train_stations`);
 		if (!response.ok) throw new Error("Failed to fetch train stations");
 		return response.json();
 	},
 
 	async getTrains(station: string): Promise<string[]> {
 		const response = await fetch(
-			`${API_BASE_URL}/trains?trainStation=${encodeURIComponent(station)}`
+			`${API_BASE_URL}/trains?train_station=${encodeURIComponent(station)}`
 		);
 		if (!response.ok) throw new Error("Failed to fetch trains");
 		return response.json();
@@ -20,19 +20,19 @@ export const api = {
 
 	async getTrainArrivals(
 		station: string,
-		trainName: string
+		train_name: string
 	): Promise<TrainArrival[]> {
 		const response = await fetch(
-			`${API_BASE_URL}/trainArrivals?trainStation=${encodeURIComponent(
+			`${API_BASE_URL}/train_arrival?train_station=${encodeURIComponent(
 				station
-			)}&trainName=${encodeURIComponent(trainName)}`
+			)}&train_name=${encodeURIComponent(train_name)}`
 		);
 		if (!response.ok) throw new Error("Failed to fetch train arrivals");
 		return response.json();
 	},
 
-	async getLastImport(): Promise<{ lastImport: string | null }> {
-		const response = await fetch(`${API_BASE_URL}/lastImport`);
+	async getLastImport(): Promise<{ last_import: string | null }> {
+		const response = await fetch(`${API_BASE_URL}/last_import`);
 		if (!response.ok) throw new Error("Failed to fetch last import time");
 		return response.json();
 	},

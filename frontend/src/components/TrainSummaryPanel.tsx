@@ -37,26 +37,26 @@ export function TrainSummaryPanel({ arrivals }: TrainSummaryPanelProps) {
   }
 
   // Calculate statistics
-  const canceledCount = arrivals.filter(a => a.isCanceled).length;
-  const activeArrivals = arrivals.filter(a => !a.isCanceled);
+  const canceledCount = arrivals.filter(a => a.is_canceled).length;
+  const activeArrivals = arrivals.filter(a => !a.is_canceled);
   const totalArrivals = activeArrivals.length;
-  const avgDelay = Math.round(activeArrivals.reduce((acc, curr) => acc + curr.delayInMin, 0) / totalArrivals);
+  const avgDelay = Math.round(activeArrivals.reduce((acc, curr) => acc + curr.delay_in_min, 0) / totalArrivals);
   
   // Prepare data for pie chart
   const delayCategories: DelayCategory[] = [
     {
       name: t('trainSummary.delayCategories.onTime'),
-      value: arrivals.filter(a => !a.isCanceled && a.delayInMin <= 5).length,
+      value: arrivals.filter(a => !a.is_canceled && a.delay_in_min <= 5).length,
       color: '#22c55e' // green
     },
     {
       name: t('trainSummary.delayCategories.slightDelay'),
-      value: arrivals.filter(a => !a.isCanceled && a.delayInMin > 5 && a.delayInMin <= 15).length,
+      value: arrivals.filter(a => !a.is_canceled && a.delay_in_min > 5 && a.delay_in_min <= 15).length,
       color: '#eab308' // yellow
     },
     {
       name: t('trainSummary.delayCategories.majorDelay'),
-      value: arrivals.filter(a => !a.isCanceled && a.delayInMin > 15).length,
+      value: arrivals.filter(a => !a.is_canceled && a.delay_in_min > 15).length,
       color: '#ef4444' // red
     },
     {
@@ -68,7 +68,7 @@ export function TrainSummaryPanel({ arrivals }: TrainSummaryPanelProps) {
 
   // Prepare data for line chart
   const timelineData = arrivals
-    .filter(a => !a.isCanceled)
+    .filter(a => !a.is_canceled)
     .reduce((acc: { [key: string]: TimelineDataPoint }, arrival) => {
       const dayKey = new Date(arrival.time).toLocaleDateString('de-DE', {
         month: 'numeric',
@@ -76,8 +76,8 @@ export function TrainSummaryPanel({ arrivals }: TrainSummaryPanelProps) {
       }).replace(/\.$/, ''); // Remove trailing dot
       
       const rideInfo = {
-        delay: arrival.delayInMin,
-        color: getDelayColor(arrival.delayInMin),
+        delay: arrival.delay_in_min,
+        color: getDelayColor(arrival.delay_in_min),
         time: new Date(arrival.time).toLocaleTimeString('de-DE', {
           hour: '2-digit',
           minute: '2-digit'
@@ -87,8 +87,8 @@ export function TrainSummaryPanel({ arrivals }: TrainSummaryPanelProps) {
       if (!acc[dayKey]) {
         acc[dayKey] = {
           time: dayKey,
-          delay: arrival.delayInMin,
-          color: getDelayColor(arrival.delayInMin),
+          delay: arrival.delay_in_min,
+          color: getDelayColor(arrival.delay_in_min),
           rides: [rideInfo]
         };
       } else {

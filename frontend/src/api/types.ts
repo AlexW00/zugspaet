@@ -1,8 +1,8 @@
 export interface TrainArrival {
-	delayInMin: number;
+	delay_in_min: number;
 	time: string;
-	finalDestinationStation: string;
-	isCanceled: boolean;
+	final_destination_station: string;
+	is_canceled: boolean;
 }
 
 export interface ApiError {
