@@ -295,8 +295,9 @@ function App() {
               {(selectedStation || selectedTrain) && (
                 <>
                   <TrainSummaryPanel 
-                    arrivals={arrivals} 
-                    isLoading={isLoadingArrivals} 
+                    station={selectedStation}
+                    train_name={selectedTrain}
+                    isLoading={isLoadingArrivals}
                   />
                   <TrainArrivalsTable
                     arrivals={arrivals}

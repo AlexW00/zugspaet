@@ -187,6 +187,127 @@ def last_import():
         return jsonify({"error": "Internal server error"}), 500
 
 
+@api.route("/stats/delays", methods=["GET"])
+def delay_statistics():
+    """Get delay statistics for visualization."""
+    station = sanitize_input(request.args.get("train_station"))
+    train_name = sanitize_input(request.args.get("train_name"))
+    days = int(sanitize_input(request.args.get("days", "30")))
+
+    try:
+        with db_cursor(psycopg2.extras.DictCursor) as cur:
+            query = """
+                SELECT 
+                    ROUND(AVG(delay_in_min)) as avg_delay,
+                    MIN(delay_in_min) as min_delay,
+                    MAX(delay_in_min) as max_delay,
+                    PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY delay_in_min) as median_delay,
+                    COUNT(*) as total_arrivals,
+                    COUNT(CASE WHEN delay_in_min > 0 THEN 1 END) as delayed_arrivals,
+                    COUNT(CASE WHEN delay_in_min <= 0 THEN 1 END) as ontime_arrivals
+                FROM train_data
+                WHERE NOT is_canceled
+                AND time >= CURRENT_DATE - INTERVAL '%s days'
+            """
+            params = [days]
+
+            if station:
+                query += " AND station = %s"
+                params.append(station)
+            if train_name:
+                query += " AND train_name = %s"
+                params.append(train_name)
+
+            cur.execute(query, params)
+            result = dict(cur.fetchone())
+            return jsonify(result)
+    except Exception as e:
+        logger.error(f"Error fetching delay statistics: {str(e)}")
+        return jsonify({"error": "Internal server error"}), 500
+
+
+@api.route("/stats/delays/by_time", methods=["GET"])
+def delays_by_time():
+    """Get delay statistics grouped by time periods."""
+    station = sanitize_input(request.args.get("train_station"))
+    train_name = sanitize_input(request.args.get("train_name"))
+    group_by = sanitize_input(request.args.get("group_by", "day"))  # hour, day, month
+    days = int(sanitize_input(request.args.get("days", "30")))
+
+    try:
+        with db_cursor(psycopg2.extras.DictCursor) as cur:
+            time_group = {
+                "hour": "EXTRACT(HOUR FROM time)",
+                "day": "EXTRACT(DOW FROM time)",
+                "month": "EXTRACT(MONTH FROM time)",
+            }.get(group_by, "EXTRACT(HOUR FROM time)")
+
+            query = f"""
+                SELECT 
+                    {time_group} as time_group,
+                    ROUND(AVG(delay_in_min)) as avg_delay,
+                    COUNT(*) as total_arrivals,
+                    COUNT(CASE WHEN delay_in_min > 0 THEN 1 END) as delayed_arrivals
+                FROM train_data
+                WHERE NOT is_canceled
+                AND time >= CURRENT_DATE - INTERVAL '%s days'
+            """
+            params = [days]
+
+            if station:
+                query += " AND station = %s"
+                params.append(station)
+            if train_name:
+                query += " AND train_name = %s"
+                params.append(train_name)
+
+            query += " GROUP BY time_group ORDER BY time_group"
+
+            cur.execute(query, params)
+            results = [dict(row) for row in cur.fetchall()]
+            return jsonify(results)
+    except Exception as e:
+        logger.error(f"Error fetching time-based delay statistics: {str(e)}")
+        return jsonify({"error": "Internal server error"}), 500
+
+
+@api.route("/stats/top_delays", methods=["GET"])
+def top_delays():
+    """Get top delayed stations or trains."""
+    type_filter = sanitize_input(
+        request.args.get("type", "station")
+    )  # station or train
+    limit = min(int(request.args.get("limit", 10)), 50)  # Cap at 50 results
+    days = int(sanitize_input(request.args.get("days", "30")))
+
+    try:
+        with db_cursor(psycopg2.extras.DictCursor) as cur:
+            group_by = "station" if type_filter == "station" else "train_name"
+
+            query = f"""
+                SELECT 
+                    {group_by} as name,
+                    ROUND(AVG(delay_in_min)) as avg_delay,
+                    COUNT(*) as total_arrivals,
+                    COUNT(CASE WHEN delay_in_min > 0 THEN 1 END) as delayed_arrivals,
+                    ROUND(COUNT(CASE WHEN delay_in_min > 0 THEN 1 END)::float / COUNT(*) * 100, 2) as delay_percentage
+                FROM train_data
+                WHERE NOT is_canceled
+                AND time >= CURRENT_DATE - INTERVAL '%s days'
+                GROUP BY {group_by}
+                HAVING COUNT(*) >= 10  -- Minimum sample size
+                ORDER BY avg_delay DESC
+                LIMIT %s
+            """
+
+            cur.execute(query, [days, limit])
+            results = [dict(row) for row in cur.fetchall()]
+            return jsonify(results)
+    except Exception as e:
+        logger.error(f"Error fetching top delays: {str(e)}")
+        return jsonify({"error": "Internal server error"}), 500
+
+
 # Error handlers
 @api.errorhandler(429)
 def ratelimit_handler(e):
