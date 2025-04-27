@@ -72,12 +72,7 @@ The easiest way to get started is using Docker Compose:
 docker-compose up
 ```
 
-This will start all necessary services:
-
-- Frontend (Vue.js application)
-- Backend (Python FastAPI server)
-- PostgreSQL database
-- Nginx reverse proxy
+This will start all necessary services.
 
 ### Running Locally
 
@@ -115,10 +110,10 @@ The application will be available at `http://localhost:5000`.
 ### Project Structure
 
 ```
-├── frontend/            # Vue.js frontend application
+├── frontend/            # frontend application
 ├── data/               # Raw XML data storage
 ├── migrations/         # Database migration scripts
-├── server.py          # Main FastAPI server
+├── server.py          # Main server
 ├── fetch_data.py      # Data collection script
 ├── db_utils.py        # Database utilities
 └── docker-compose.yaml # Docker configuration
