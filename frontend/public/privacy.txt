@@ -1,3 +1,4 @@
 Privacy Policy
 
 This application does not save any user data. All interactions are processed in real-time without storing personal information.
+Ackee is used for (anonymous) data analytics such as visitor count.
