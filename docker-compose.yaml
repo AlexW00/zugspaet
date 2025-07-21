@@ -29,6 +29,8 @@ services:
       context: .
       args:
         - API_BASE_URL=$BASE_URL/api
+        - ACKEE_SERVER_URL=$ACKEE_SERVER_URL
+        - ACKEE_DOMAIN_ID=$ACKEE_DOMAIN_ID
     container_name: deutsche-bahn-app
     environment:
       - DATA_DIR=/app/data/
@@ -43,6 +45,8 @@ services:
       - BASE_URL=$BASE_URL
       - DELETE_XML_AFTER_IMPORT=$DELETE_XML_AFTER_IMPORT
       - PRODUCTION=$PRODUCTION
+      - ACKEE_SERVER_URL=$ACKEE_SERVER_URL
+      - ACKEE_DOMAIN_ID=$ACKEE_DOMAIN_ID
     ports:
       - "5000:5000"
     volumes:

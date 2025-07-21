@@ -62,7 +62,13 @@ Zu\[g\]spät (a play on "Zug" [train] and "spät" [late]) is a data collection a
    PRIVATE_API_KEY=your_private_api_key # Secret used by the backend
    POSTGRES_PASSWORD=your_db_password
    BASE_URL=http://localhost:5000
+   
+   # Optional: Ackee Analytics
+   ACKEE_SERVER_URL=https://your-ackee-server.com
+   ACKEE_DOMAIN_ID=your-domain-id
    ```
+
+   See [ENVIRONMENT.md](ENVIRONMENT.md) for a complete list of environment variables.
 
 ### Running with Docker (Recommended)
 
