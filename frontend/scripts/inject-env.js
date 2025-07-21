@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 
 // Read the index.html file
-const indexPath = path.join(__dirname, '../dist/index.html');
+const indexPath = path.join(__dirname, '../frontend/dist/index.html');
 let htmlContent = fs.readFileSync(indexPath, 'utf8');
 
 // Environment variables for Ackee
