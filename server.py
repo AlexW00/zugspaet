@@ -9,10 +9,10 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request, send_from_directory
+from flask_caching import Cache
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from flask_caching import Cache
 
 from db_utils import get_db_connection, init_database
 from fetch_data import fetch_data
