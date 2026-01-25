@@ -46,7 +46,7 @@ services:
       - ACKEE_SERVER_URL=$ACKEE_SERVER_URL
       - ACKEE_DOMAIN_ID=$ACKEE_DOMAIN_ID
     ports:
-      - "5001:5000"
+      - "5000:5000"
     volumes:
       - $HOME/deutsche-bahn-data/xml/:/app/data/xml/
       - $HOME/deutsche-bahn-data/eva/:/app/data/eva/
