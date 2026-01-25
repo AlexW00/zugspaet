@@ -1,3 +1,15 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+    --color-db-red-50: #fff1f1;
+    --color-db-red-100: #ffdfdf;
+    --color-db-red-200: #ffc5c5;
+    --color-db-red-300: #ff9d9d;
+    --color-db-red-400: #ff6464;
+    --color-db-red-500: #ff2d2d;
+    --color-db-red-600: #ec0000;
+    --color-db-red-700: #c70000;
+    --color-db-red-800: #a40606;
+    --color-db-red-900: #880c0c;
+    --color-db-red-950: #4b0000;
+}
