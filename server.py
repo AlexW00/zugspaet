@@ -82,8 +82,8 @@ def run_data_fetch():
         save_folder = fetch_data(api_key=api_key, client_id=client_id, xml_dir=xml_dir, eva_dir=eva_dir)
         app.logger.info(f"Data fetch completed successfully. Data saved to {save_folder}")
         with app.app_context():
-             cache.clear()
-             app.logger.info("Cache cleared after data fetch.")
+            cache.clear()
+            app.logger.info("Cache cleared after data fetch.")
 
     except Exception as e:
         app.logger.error(f"Unexpected error during data fetch process: {e!s}")
@@ -138,7 +138,7 @@ limiter = Limiter(
 # Configure caching
 cache_config = {
     "CACHE_TYPE": "SimpleCache" if enable_caching else "NullCache",
-    "CACHE_DEFAULT_TIMEOUT": 3600  # 1 hour default
+    "CACHE_DEFAULT_TIMEOUT": 3600,  # 1 hour default
 }
 app.config.from_mapping(cache_config)
 cache = Cache(app)
@@ -253,7 +253,7 @@ def require_private_api_key(f):
 
 
 @app.route("/api/trainStations", methods=["GET"])
-@cache.cached(timeout=86400) # Cache for 24 hours
+@cache.cached(timeout=86400)  # Cache for 24 hours
 def train_stations():
     try:
         stations = get_all_stations()
@@ -264,7 +264,7 @@ def train_stations():
 
 
 @app.route("/api/trains", methods=["GET"])
-@cache.cached(timeout=3600, query_string=True) # Cache for 1 hour
+@cache.cached(timeout=3600, query_string=True)  # Cache for 1 hour
 def trains():
     station = sanitize_input(request.args.get("trainStation"))
     if not station:
@@ -291,7 +291,7 @@ def trains():
 
 
 @app.route("/api/trainArrivals", methods=["GET"])
-@cache.cached(timeout=3600, query_string=True) # Cache for 1 hour
+@cache.cached(timeout=3600, query_string=True)  # Cache for 1 hour
 def train_arrivals():
     station = sanitize_input(request.args.get("trainStation"))
     train_name = sanitize_input(request.args.get("trainName"))
