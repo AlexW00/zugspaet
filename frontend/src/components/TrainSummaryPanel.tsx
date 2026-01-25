@@ -14,6 +14,7 @@ interface DelayCategory {
 
 interface TimelineDataPoint {
   time: string;
+  timestamp: number;
   delay: number;
   color: string;
   rides: {
@@ -41,7 +42,7 @@ export function TrainSummaryPanel({ arrivals }: TrainSummaryPanelProps) {
   const activeArrivals = arrivals.filter(a => !a.isCanceled);
   const totalArrivals = activeArrivals.length;
   const avgDelay = Math.round(activeArrivals.reduce((acc, curr) => acc + curr.delayInMin, 0) / totalArrivals);
-  
+
   // Prepare data for pie chart
   const delayCategories: DelayCategory[] = [
     {
@@ -70,49 +71,50 @@ export function TrainSummaryPanel({ arrivals }: TrainSummaryPanelProps) {
   const timelineData = arrivals
     .filter(a => !a.isCanceled)
     .reduce((acc: { [key: string]: TimelineDataPoint }, arrival) => {
-      const dayKey = new Date(arrival.time).toLocaleDateString('de-DE', {
+      const date = new Date(arrival.time);
+      // Use full date key to prevent merging different years
+      const fullDateKey = date.toISOString().split('T')[0];
+
+      const displayDate = date.toLocaleDateString('de-DE', {
         month: 'numeric',
         day: 'numeric'
       }).replace(/\.$/, ''); // Remove trailing dot
-      
+
       const rideInfo = {
         delay: arrival.delayInMin,
         color: getDelayColor(arrival.delayInMin),
-        time: new Date(arrival.time).toLocaleTimeString('de-DE', {
+        time: date.toLocaleTimeString('de-DE', {
           hour: '2-digit',
           minute: '2-digit'
         })
       };
 
-      if (!acc[dayKey]) {
-        acc[dayKey] = {
-          time: dayKey,
+      if (!acc[fullDateKey]) {
+        acc[fullDateKey] = {
+          time: displayDate,
+          timestamp: date.setHours(0, 0, 0, 0),
           delay: arrival.delayInMin,
           color: getDelayColor(arrival.delayInMin),
           rides: [rideInfo]
         };
       } else {
-        acc[dayKey].rides.push(rideInfo);
+        acc[fullDateKey].rides.push(rideInfo);
         // Update average delay
-        const totalDelay = acc[dayKey].rides.reduce((sum, ride) => sum + ride.delay, 0);
-        acc[dayKey].delay = Math.round(totalDelay / acc[dayKey].rides.length);
-        acc[dayKey].color = getDelayColor(acc[dayKey].delay);
+        const totalDelay = acc[fullDateKey].rides.reduce((sum, ride) => sum + ride.delay, 0);
+        acc[fullDateKey].delay = Math.round(totalDelay / acc[fullDateKey].rides.length);
+        acc[fullDateKey].color = getDelayColor(acc[fullDateKey].delay);
       }
-      
+
       return acc;
     }, {});
 
   const groupedTimelineData = Object.values(timelineData)
-    .sort((a, b) => {
-      const [dayA, monthA] = a.time.split('.').map(Number);
-      const [dayB, monthB] = b.time.split('.').map(Number);
-      return (monthA * 100 + dayA) - (monthB * 100 + dayB);
-    });
+    .sort((a, b) => a.timestamp - b.timestamp);
 
   return (
     <div className="mt-6 mb-8 bg-white rounded-lg shadow p-6">
       <h2 className="text-xl font-semibold text-gray-900 mb-4">{t('trainSummary.title')}</h2>
-      
+
       {/* Statistics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div className="bg-gray-50 rounded-lg p-4">
@@ -197,7 +199,7 @@ export function TrainSummaryPanel({ arrivals }: TrainSummaryPanelProps) {
                     if (!props?.payload) return [value, name];
                     const rides = props.payload.rides;
                     if (!rides) return [`${value} ${t('trainSummary.tooltips.minutes')}`, t('trainSummary.tooltips.delay')];
-                    
+
                     return [
                       <div key="tooltip-content">
                         <div style={{ marginBottom: '8px' }}>
@@ -219,7 +221,7 @@ export function TrainSummaryPanel({ arrivals }: TrainSummaryPanelProps) {
                             </div>
                           ))}
                           {rides.length > 5 && (
-                            <div style={{ 
+                            <div style={{
                               color: '#6b7280',
                               fontSize: '10px',
                               fontStyle: 'italic',
