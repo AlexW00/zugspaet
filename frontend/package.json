@@ -15,12 +15,14 @@
 		"i18next": "^25.8.0",
 		"i18next-browser-languagedetector": "^8.2.0",
 		"i18next-http-backend": "^3.0.2",
+		"lodash": "^4.17.21",
 		"react": "^19.0.0",
 		"react-dom": "^19.0.0",
 		"react-i18next": "^16.5.3",
 		"recharts": "^3.7.0"
 	},
 	"devDependencies": {
+		"@types/lodash": "^4.17.14",
 		"@types/react": "^19.0.0",
 		"@types/react-dom": "^19.0.0",
 		"@typescript-eslint/eslint-plugin": "^8.0.0",
@@ -32,6 +34,7 @@
 		"eslint-plugin-react-refresh": "^0.4.26",
 		"postcss": "^8.5.6",
 		"tailwindcss": "^4.1.18",
+		"@tailwindcss/postcss": "^4.0.0",
 		"typescript": "^5.9.3",
 		"vite": "^7.3.1"
 	}
