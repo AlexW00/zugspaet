@@ -1,6 +1,5 @@
 import logging
 import os
-import sys
 from functools import wraps
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
@@ -37,9 +36,7 @@ Path("logs").mkdir(exist_ok=True)
 # Create file handler
 file_handler = RotatingFileHandler("logs/app.log", maxBytes=10240, backupCount=10)
 file_handler.setFormatter(
-    logging.Formatter(
-        "%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]"
-    )
+    logging.Formatter("%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]")
 )
 file_handler.setLevel(log_level)
 
@@ -80,15 +77,11 @@ def run_data_fetch():
 
     try:
         app.logger.info("Fetching new data...")
-        save_folder = fetch_data(
-            api_key=api_key, client_id=client_id, xml_dir=xml_dir, eva_dir=eva_dir
-        )
-        app.logger.info(
-            f"Data fetch completed successfully. Data saved to {save_folder}"
-        )
+        save_folder = fetch_data(api_key=api_key, client_id=client_id, xml_dir=xml_dir, eva_dir=eva_dir)
+        app.logger.info(f"Data fetch completed successfully. Data saved to {save_folder}")
 
     except Exception as e:
-        app.logger.error(f"Unexpected error during data fetch process: {str(e)}")
+        app.logger.error(f"Unexpected error during data fetch process: {e!s}")
 
 
 def run_data_import():
@@ -99,14 +92,12 @@ def run_data_import():
         app.logger.info("Importing data to database...")
         processed_dates = import_data(xml_dir=xml_dir)
         if processed_dates:
-            app.logger.info(
-                f"Successfully processed dates: {', '.join(processed_dates)}"
-            )
+            app.logger.info(f"Successfully processed dates: {', '.join(processed_dates)}")
         else:
             app.logger.info("No new dates to process")
 
     except Exception as e:
-        app.logger.error(f"Unexpected error during data import process: {str(e)}")
+        app.logger.error(f"Unexpected error during data import process: {e!s}")
 
 
 def run_eva_list_update_task():
@@ -115,14 +106,12 @@ def run_eva_list_update_task():
     try:
         run_eva_list_update(api_key=api_key, client_id=client_id, eva_dir=eva_dir)
     except Exception as e:
-        app.logger.error(f"Unexpected error during EVA list update process: {str(e)}")
+        app.logger.error(f"Unexpected error during EVA list update process: {e!s}")
 
 
 app = Flask(__name__, static_folder="frontend/dist", static_url_path="")
 # Configure CORS
-CORS(
-    app, resources={r"/api/*": {"origins": [base_url]}}
-)  # Restrict CORS to base URL only
+CORS(app, resources={r"/api/*": {"origins": [base_url]}})  # Restrict CORS to base URL only
 
 # Add file handler to Flask logger
 app.logger.addHandler(file_handler)
@@ -250,7 +239,7 @@ def train_stations():
         stations = get_all_stations()
         return jsonify(stations)
     except Exception as e:
-        app.logger.error(f"Error in train_stations: {str(e)}")
+        app.logger.error(f"Error in train_stations: {e!s}")
         return jsonify({"error": "Internal server error"}), 500
 
 
@@ -276,7 +265,7 @@ def trains():
         trains = get_trains_for_station(station, days_cutoff)
         return jsonify(trains)
     except Exception as e:
-        app.logger.error(f"Error in trains: {str(e)}")
+        app.logger.error(f"Error in trains: {e!s}")
         return jsonify({"error": "Internal server error"}), 500
 
 
@@ -287,9 +276,7 @@ def train_arrivals():
 
     if not station or not train_name:
         return (
-            jsonify(
-                {"error": "Both trainStation and trainName parameters are required"}
-            ),
+            jsonify({"error": "Both trainStation and trainName parameters are required"}),
             400,
         )
 
@@ -312,7 +299,7 @@ def train_arrivals():
         arrivals = get_train_arrivals(station, train_name, days_cutoff)
         return jsonify(arrivals)
     except Exception as e:
-        app.logger.error(f"Error in train_arrivals: {str(e)}")
+        app.logger.error(f"Error in train_arrivals: {e!s}")
         return jsonify({"error": "Internal server error"}), 500
 
 
@@ -327,9 +314,7 @@ def system_status():
         try:
             with conn.cursor() as cur:
                 cur.execute("SELECT date FROM processed_dates ORDER BY date DESC")
-                processed_dates = [
-                    row[0].strftime("%Y-%m-%d") for row in cur.fetchall()
-                ]
+                processed_dates = [row[0].strftime("%Y-%m-%d") for row in cur.fetchall()]
         finally:
             conn.close()
 
@@ -343,7 +328,7 @@ def system_status():
             }
         )
     except Exception as e:
-        app.logger.error(f"Error in status endpoint: {str(e)}")
+        app.logger.error(f"Error in status endpoint: {e!s}")
         return jsonify({"status": "error", "error": str(e)}), 500
 
 
@@ -352,9 +337,7 @@ def system_status():
 def trigger_fetch():
     """Manually trigger data fetch process."""
     try:
-        save_folder = fetch_data(
-            api_key=api_key, client_id=client_id, eva_dir=eva_dir, xml_dir=xml_dir
-        )
+        save_folder = fetch_data(api_key=api_key, client_id=client_id, eva_dir=eva_dir, xml_dir=xml_dir)
         return jsonify(
             {
                 "status": "success",
@@ -362,7 +345,7 @@ def trigger_fetch():
             }
         )
     except Exception as e:
-        app.logger.error(f"Error in manual data fetch: {str(e)}")
+        app.logger.error(f"Error in manual data fetch: {e!s}")
         return jsonify({"status": "error", "error": str(e)}), 500
 
 
@@ -374,7 +357,7 @@ def trigger_import():
         processed_dates = import_data(xml_dir=xml_dir)
         return jsonify({"status": "success", "processed_dates": processed_dates})
     except Exception as e:
-        app.logger.error(f"Error in manual data import: {str(e)}")
+        app.logger.error(f"Error in manual data import: {e!s}")
         return jsonify({"status": "error", "error": str(e)}), 500
 
 
@@ -386,17 +369,11 @@ def last_import():
             with conn.cursor() as cur:
                 cur.execute("SELECT MAX(date) FROM processed_dates")
                 last_import_date = cur.fetchone()[0]
-                return jsonify(
-                    {
-                        "lastImport": (
-                            last_import_date.isoformat() if last_import_date else None
-                        )
-                    }
-                )
+                return jsonify({"lastImport": (last_import_date.isoformat() if last_import_date else None)})
         finally:
             conn.close()
     except Exception as e:
-        app.logger.error(f"Error getting last import date: {str(e)}")
+        app.logger.error(f"Error getting last import date: {e!s}")
         return jsonify({"error": "Internal server error"}), 500
 
 

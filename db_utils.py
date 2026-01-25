@@ -1,4 +1,3 @@
-import os
 import time
 from pathlib import Path
 
@@ -20,9 +19,7 @@ def get_db_connection(max_retries=5, retry_delay=1):
             if attempt < max_retries - 1:
                 time.sleep(retry_delay)
                 continue
-            raise Exception(
-                f"Failed to connect to database after {max_retries} attempts: {str(last_exception)}"
-            )
+            raise Exception(f"Failed to connect to database after {max_retries} attempts: {last_exception!s}")
 
 
 def init_database():
@@ -36,7 +33,7 @@ def init_database():
 
             for migration_file in migration_files:
                 print(f"Applying migration: {migration_file.name}")
-                with open(migration_file, "r") as f:
+                with open(migration_file) as f:
                     migration_sql = f.read()
                     cur.execute(migration_sql)
         conn.commit()
@@ -52,9 +49,7 @@ def init_database():
 def is_date_processed(conn, date_str):
     """Check if a specific date has already been processed."""
     with conn.cursor() as cur:
-        cur.execute(
-            "SELECT EXISTS(SELECT 1 FROM processed_dates WHERE date = %s)", (date_str,)
-        )
+        cur.execute("SELECT EXISTS(SELECT 1 FROM processed_dates WHERE date = %s)", (date_str,))
         return cur.fetchone()[0]
 
 
@@ -77,16 +72,12 @@ def bulk_insert_train_data(conn, data_df):
     df_to_insert = data_df.copy()
 
     # Convert all numeric columns to native Python types
-    numeric_columns = df_to_insert.select_dtypes(
-        include=["int32", "int64", "float32", "float64"]
-    ).columns
+    numeric_columns = df_to_insert.select_dtypes(include=["int32", "int64", "float32", "float64"]).columns
     for col in numeric_columns:
         df_to_insert[col] = df_to_insert[col].astype(float).astype(object)
 
     # Convert DataFrame to list of tuples, ensuring native Python types
-    values = [
-        tuple(None if pd.isna(x) else x for x in row) for row in df_to_insert.values
-    ]
+    values = [tuple(None if pd.isna(x) else x for x in row) for row in df_to_insert.values]
 
     # Generate the column names string
     columns = df_to_insert.columns.tolist()
@@ -97,7 +88,7 @@ def bulk_insert_train_data(conn, data_df):
             cur,
             f"""
             INSERT INTO train_data (
-                {', '.join(columns)}
+                {", ".join(columns)}
             ) VALUES %s
             """,
             values,

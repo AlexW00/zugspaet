@@ -67,8 +67,21 @@ def get_api_headers(api_key, client_id):
     }
 
 
-def save_api_data(formatted_url, save_path, headers, prettify=True, max_retries=4):
-    """Save API data to file with retries and rate limiting."""
+def save_api_data(formatted_url, save_path, headers, prettify=True, max_retries=4, skip_if_exists=False):
+    """Save API data to file with retries and rate limiting.
+
+    Args:
+        formatted_url: The API URL to fetch.
+        save_path: Path to save the response.
+        headers: HTTP headers for the request.
+        prettify: Whether to prettify the XML output.
+        max_retries: Number of retry attempts.
+        skip_if_exists: If True, skip fetching if save_path already exists.
+    """
+    if skip_if_exists and save_path.exists():
+        print(f"SKIPPED (exists): {save_path.name}")
+        return
+
     for attempt in range(max_retries):
         try:
             # Acquire a token before making the request
@@ -94,9 +107,7 @@ def save_api_data(formatted_url, save_path, headers, prettify=True, max_retries=
                 print("Retrying in 1 seconds...")
                 time.sleep(1)
             else:
-                print(
-                    f"Failed to fetch data after {max_retries} attempts: {formatted_url}"
-                )
+                print(f"Failed to fetch data after {max_retries} attempts: {formatted_url}")
 
     print(f"error: Could not retrieve data for {formatted_url}")
 
@@ -124,9 +135,7 @@ def fetch_data(
     headers = get_api_headers(api_key, client_id)
 
     plan_url = "https://apis.deutschebahn.com/db-api-marketplace/apis/timetables/v1/plan/{eva}/{date}/{hour}"
-    fchg_url = (
-        "https://apis.deutschebahn.com/db-api-marketplace/apis/timetables/v1/fchg/{eva}"
-    )
+    fchg_url = "https://apis.deutschebahn.com/db-api-marketplace/apis/timetables/v1/fchg/{eva}"
 
     date_str = datetime.now().strftime("%Y-%m-%d")
     date_str_url = date_str.replace("-", "")[2:]
@@ -151,17 +160,14 @@ def fetch_data(
 
     print("curent_hour:", curent_hour)
     for eva in eva_list:
-        for hour in range(
-            curent_hour, curent_hour + 6
-        ):  # fetch this hour and the next 5 hours
+        for hour in range(curent_hour, curent_hour + 6):  # fetch this hour and the next 5 hours
             hour = hour % 24
-            formatted_plan_url = plan_url.format(
-                eva=eva, date=date_str_url, hour=f"{hour:02}"
-            )
+            formatted_plan_url = plan_url.format(eva=eva, date=date_str_url, hour=f"{hour:02}")
             save_api_data(
                 formatted_plan_url,
                 save_folder / f"{eva}_plan_{hour:02}.xml",
                 headers=headers,
+                skip_if_exists=True,
             )
 
     print("Done")

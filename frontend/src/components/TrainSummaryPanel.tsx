@@ -104,9 +104,9 @@ export function TrainSummaryPanel({ arrivals }: TrainSummaryPanelProps) {
 
   const groupedTimelineData = Object.values(timelineData)
     .sort((a, b) => {
-      const dateA = a.time.split('.').reverse().join('');
-      const dateB = b.time.split('.').reverse().join('');
-      return dateA.localeCompare(dateB);
+      const [dayA, monthA] = a.time.split('.').map(Number);
+      const [dayB, monthB] = b.time.split('.').map(Number);
+      return (monthA * 100 + dayA) - (monthB * 100 + dayB);
     });
 
   return (
