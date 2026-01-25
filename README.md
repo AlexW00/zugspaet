@@ -107,7 +107,7 @@ This will start all necessary services.
 4. Initialize the database:
 
    ```bash
-   curl -X POST http://localhost:5000/private/import \
+   curl -X POST http://localhost:5000/private/api/import \
       -H "X-Private-Api-Key: $PRIVATE_API_KEY"
    ```
 

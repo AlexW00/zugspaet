@@ -9,11 +9,9 @@ from pathlib import Path
 import pandas as pd
 from tqdm import tqdm
 
-from config import DATA_DIR
 from db_utils import (
     bulk_insert_train_data,
     get_db_connection,
-    init_database,
     is_date_processed,
     mark_date_as_processed,
 )
@@ -31,12 +29,8 @@ def get_plan_xml_rows(xml_path, alternative_station_names):
         s_id = s.get("id")
         train_type = s.find("tl").get("c") if s.find("tl") is not None else None
         train_number = s.find("tl").get("n") if s.find("tl") is not None else None
-        ar_train_line_number = (
-            s.find("ar").get("l") if s.find("ar") is not None else None
-        )
-        dp_train_line_number = (
-            s.find("dp").get("l") if s.find("dp") is not None else None
-        )
+        ar_train_line_number = s.find("ar").get("l") if s.find("ar") is not None else None
+        dp_train_line_number = s.find("dp").get("l") if s.find("dp") is not None else None
 
         if train_type in ["IC", "ICE", "EC"]:
             train_name = f"{train_type} {train_number}"
@@ -50,9 +44,7 @@ def get_plan_xml_rows(xml_path, alternative_station_names):
 
         s_id_split = s_id.split("-")
 
-        dp_ppth = (
-            s.find("dp").get("ppth") if s.find("dp") is not None else None
-        )  # departure planed path
+        dp_ppth = s.find("dp").get("ppth") if s.find("dp") is not None else None  # departure planed path
         if dp_ppth is None:
             final_destination_station = station
         else:
@@ -65,12 +57,8 @@ def get_plan_xml_rows(xml_path, alternative_station_names):
                 "train_name": train_name,
                 "final_destination_station": final_destination_station,
                 "train_type": train_type,
-                "arrival_planned_time": (
-                    s.find("ar").get("pt") if s.find("ar") is not None else None
-                ),
-                "departure_planned_time": (
-                    s.find("dp").get("pt") if s.find("dp") is not None else None
-                ),
+                "arrival_planned_time": (s.find("ar").get("pt") if s.find("ar") is not None else None),
+                "departure_planned_time": (s.find("dp").get("pt") if s.find("dp") is not None else None),
                 "train_line_ride_id": "-".join(s_id_split[:-1]),
                 "train_line_station_num": int(s_id_split[-1]),
             }
@@ -103,18 +91,10 @@ def get_fchg_xml_rows(xml_path, id_to_data):
 
     for s in root.findall("s"):
         s_id = s.get("id")
-        ar_ct = (
-            s.find("ar").get("ct") if s.find("ar") is not None else None
-        )  # arrival change
-        dp_ct = (
-            s.find("dp").get("ct") if s.find("dp") is not None else None
-        )  # departure change
-        ar_clt = (
-            s.find("ar").get("clt") if s.find("ar") is not None else None
-        )  # arrival cancellation time
-        dp_clt = (
-            s.find("dp").get("clt") if s.find("dp") is not None else None
-        )  # departure cancellation time
+        ar_ct = s.find("ar").get("ct") if s.find("ar") is not None else None  # arrival change
+        dp_ct = s.find("dp").get("ct") if s.find("dp") is not None else None  # departure change
+        ar_clt = s.find("ar").get("clt") if s.find("ar") is not None else None  # arrival cancellation time
+        dp_clt = s.find("dp").get("clt") if s.find("dp") is not None else None  # departure cancellation time
 
         if ar_clt is None and dp_clt is None:
             is_canceled = False
@@ -156,16 +136,14 @@ def delete_date_folder(date_folder):
     """Delete a date folder and all its contents if deletion is enabled."""
     should_delete = os.getenv("DELETE_XML_AFTER_IMPORT", "false").lower() == "true"
     if not should_delete:
-        print(
-            f"Skipping deletion of folder {date_folder} (deletion disabled by configuration)"
-        )
+        print(f"Skipping deletion of folder {date_folder} (deletion disabled by configuration)")
         return
 
     try:
         shutil.rmtree(date_folder)
         print(f"Successfully deleted folder: {date_folder}")
     except Exception as e:
-        print(f"Error deleting folder {date_folder}: {str(e)}")
+        print(f"Error deleting folder {date_folder}: {e!s}")
 
 
 def process_date_folder(date_folder, alternative_station_names, conn):
@@ -190,12 +168,8 @@ def process_date_folder(date_folder, alternative_station_names, conn):
 
     # Apply the same transformations as before
     df["is_canceled"] = df["is_canceled"].astype("boolean").fillna(False)
-    df["departure_change_time"] = df["departure_change_time"].fillna(
-        df["departure_planned_time"]
-    )
-    df["arrival_change_time"] = df["arrival_change_time"].fillna(
-        df["arrival_planned_time"]
-    )
+    df["departure_change_time"] = df["departure_change_time"].fillna(df["departure_planned_time"])
+    df["arrival_change_time"] = df["arrival_change_time"].fillna(df["arrival_planned_time"])
 
     departure_time_delta_in_min = (
         df["departure_change_time"] - df["departure_planned_time"]
@@ -249,9 +223,7 @@ def process_date_folder(date_folder, alternative_station_names, conn):
     delete_date_folder(date_folder)
 
 
-def import_data(
-    xml_dir="/app/data/xml", alternative_station_names=None, specific_date=None
-):
+def import_data(xml_dir="/app/data/xml", alternative_station_names=None, specific_date=None):
     """
     Main function to import data that can be called directly or via command line.
 
@@ -275,9 +247,7 @@ def import_data(
     if alternative_station_names is None:
         alt_station_file = Path("alternative_station_name_to_station_name.json")
         if not alt_station_file.exists():
-            raise FileNotFoundError(
-                f"Alternative station names file {alt_station_file} does not exist"
-            )
+            raise FileNotFoundError(f"Alternative station names file {alt_station_file} does not exist")
         with alt_station_file.open("r") as f:
             alternative_station_names = json.load(f)
 
@@ -288,9 +258,7 @@ def import_data(
         if specific_date:
             date_folder = xml_dir / specific_date
             if not date_folder.exists():
-                raise FileNotFoundError(
-                    f"Data folder for date {specific_date} does not exist"
-                )
+                raise FileNotFoundError(f"Data folder for date {specific_date} does not exist")
             process_date_folder(date_folder, alternative_station_names, conn)
             processed_dates.append(specific_date)
         else:
@@ -305,7 +273,7 @@ def import_data(
                     process_date_folder(date_folder, alternative_station_names, conn)
                     processed_dates.append(date_folder.name)
                 except Exception as e:
-                    print(f"Error processing {date_folder.name}: {str(e)}")
+                    print(f"Error processing {date_folder.name}: {e!s}")
                     continue
 
     finally:
@@ -321,5 +289,5 @@ if __name__ == "__main__":
         processed = import_data(specific_date=specific_date)
         print(f"Successfully processed dates: {', '.join(processed)}")
     except Exception as e:
-        print(f"Error: {str(e)}")
+        print(f"Error: {e!s}")
         sys.exit(1)
