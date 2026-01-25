@@ -9,6 +9,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request, send_from_directory
+from flask_caching import Cache
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -22,6 +23,7 @@ load_dotenv()
 
 # Set up logging based on environment
 is_production = os.getenv("PRODUCTION", "false").lower() == "true"
+enable_caching = os.getenv("ENABLE_CACHING", "true").lower() == "true"
 log_level = logging.WARNING if is_production else logging.INFO
 
 # Configure all loggers
@@ -79,6 +81,9 @@ def run_data_fetch():
         app.logger.info("Fetching new data...")
         save_folder = fetch_data(api_key=api_key, client_id=client_id, xml_dir=xml_dir, eva_dir=eva_dir)
         app.logger.info(f"Data fetch completed successfully. Data saved to {save_folder}")
+        with app.app_context():
+            cache.clear()
+            app.logger.info("Cache cleared after data fetch.")
 
     except Exception as e:
         app.logger.error(f"Unexpected error during data fetch process: {e!s}")
@@ -93,6 +98,9 @@ def run_data_import():
         processed_dates = import_data(xml_dir=xml_dir)
         if processed_dates:
             app.logger.info(f"Successfully processed dates: {', '.join(processed_dates)}")
+            with app.app_context():
+                cache.clear()
+                app.logger.info("Cache cleared after data import.")
         else:
             app.logger.info("No new dates to process")
 
@@ -105,6 +113,9 @@ def run_eva_list_update_task():
     app.logger.info("Starting scheduled EVA list update process...")
     try:
         run_eva_list_update(api_key=api_key, client_id=client_id, eva_dir=eva_dir)
+        with app.app_context():
+            cache.clear()
+            app.logger.info("Cache cleared after EVA list update.")
     except Exception as e:
         app.logger.error(f"Unexpected error during EVA list update process: {e!s}")
 
@@ -123,6 +134,14 @@ limiter = Limiter(
     key_func=get_remote_address,
     default_limits=["2000 per day", "100 per hour"],
 )
+
+# Configure caching
+cache_config = {
+    "CACHE_TYPE": "SimpleCache" if enable_caching else "NullCache",
+    "CACHE_DEFAULT_TIMEOUT": 3600,  # 1 hour default
+}
+app.config.from_mapping(cache_config)
+cache = Cache(app)
 
 
 def sanitize_input(value, max_length=500):
@@ -234,6 +253,7 @@ def require_private_api_key(f):
 
 
 @app.route("/api/trainStations", methods=["GET"])
+@cache.cached(timeout=86400)  # Cache for 24 hours
 def train_stations():
     try:
         stations = get_all_stations()
@@ -244,6 +264,7 @@ def train_stations():
 
 
 @app.route("/api/trains", methods=["GET"])
+@cache.cached(timeout=3600, query_string=True)  # Cache for 1 hour
 def trains():
     station = sanitize_input(request.args.get("trainStation"))
     if not station:
@@ -270,6 +291,7 @@ def trains():
 
 
 @app.route("/api/trainArrivals", methods=["GET"])
+@cache.cached(timeout=3600, query_string=True)  # Cache for 1 hour
 def train_arrivals():
     station = sanitize_input(request.args.get("trainStation"))
     train_name = sanitize_input(request.args.get("trainName"))
@@ -338,6 +360,8 @@ def trigger_fetch():
     """Manually trigger data fetch process."""
     try:
         save_folder = fetch_data(api_key=api_key, client_id=client_id, eva_dir=eva_dir, xml_dir=xml_dir)
+        cache.clear()
+        app.logger.info("Cache cleared after manual data fetch.")
         return jsonify(
             {
                 "status": "success",
@@ -355,6 +379,8 @@ def trigger_import():
     """Manually trigger data import process."""
     try:
         processed_dates = import_data(xml_dir=xml_dir)
+        cache.clear()
+        app.logger.info("Cache cleared after manual data import.")
         return jsonify({"status": "success", "processed_dates": processed_dates})
     except Exception as e:
         app.logger.error(f"Error in manual data import: {e!s}")
