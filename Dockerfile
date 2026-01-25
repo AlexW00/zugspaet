@@ -1,5 +1,5 @@
 # Build stage for frontend
-FROM node:20-slim AS frontend-builder
+FROM node:25-slim AS frontend-builder
 WORKDIR /app/frontend
 
 # Add build arguments for API URL and Ackee tracking
@@ -16,7 +16,7 @@ COPY frontend/ ./
 RUN npm run build
 
 # Main application stage
-FROM python:3.11-slim
+FROM python:3.14-slim
 WORKDIR /app
 
 # Install system dependencies
