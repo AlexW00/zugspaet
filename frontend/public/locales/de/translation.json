@@ -37,8 +37,8 @@
 		"delayMinutes": "Verspätung (Minuten)",
 		"delayCategories": {
 			"onTime": "Pünktlich (0-5 Min)",
-			"slightDelay": "Leichte Verspätung (6-15 Min)",
-			"majorDelay": "Große Verspätung (>15 Min)",
+			"slightDelay": "Leichte Verspätung (6-20 Min)",
+			"majorDelay": "Große Verspätung (>20 Min)",
 			"canceled": "Ausgefallen"
 		},
 		"tooltips": {

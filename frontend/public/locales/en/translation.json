@@ -37,8 +37,8 @@
 		"delayMinutes": "Delay (minutes)",
 		"delayCategories": {
 			"onTime": "On Time (0-5 min)",
-			"slightDelay": "Slight Delay (6-15 min)",
-			"majorDelay": "Major Delay (>15 min)",
+			"slightDelay": "Slight Delay (6-20 min)",
+			"majorDelay": "Major Delay (>20 min)",
 			"canceled": "Canceled"
 		},
 		"tooltips": {

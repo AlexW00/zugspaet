@@ -26,7 +26,7 @@ interface HeaderCellProps {
 
 function HeaderCell({ field, label, currentSort, onSort }: HeaderCellProps) {
   const isActive = currentSort.field === field;
-  
+
   return (
     <th
       className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
@@ -57,7 +57,7 @@ const getStatusStyle = (arrival: TrainArrival) => {
   if (arrival.delayInMin <= 5) {
     return 'bg-green-100 text-green-800'; // green for on time
   }
-  if (arrival.delayInMin <= 15) {
+  if (arrival.delayInMin <= 20) {
     return 'bg-yellow-100 text-yellow-800'; // yellow for slight delay
   }
   return 'bg-red-100 text-red-800'; // red for major delay
@@ -70,7 +70,7 @@ const getStatusText = (arrival: TrainArrival, t: (key: string) => string) => {
   if (arrival.delayInMin <= 5) {
     return t('trainTable.status.onTime');
   }
-  if (arrival.delayInMin <= 15) {
+  if (arrival.delayInMin <= 20) {
     return t('trainTable.status.slightDelay');
   }
   return t('trainTable.status.majorDelay');
@@ -102,7 +102,7 @@ export function TrainArrivalsTable({ arrivals, isLoading = false }: TrainArrival
 
   const sortedArrivals = [...arrivals].sort((a, b) => {
     const direction = sortConfig.direction === 'asc' ? 1 : -1;
-    
+
     switch (sortConfig.field) {
       case 'time':
         return direction * (new Date(a.time).getTime() - new Date(b.time).getTime());
@@ -157,13 +157,12 @@ export function TrainArrivalsTable({ arrivals, isLoading = false }: TrainArrival
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm">
                 <span
-                  className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
-                    arrival.delayInMin <= 5
+                  className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${arrival.delayInMin <= 5
                       ? 'bg-green-100 text-green-800'
-                      : arrival.delayInMin <= 15
-                      ? 'bg-yellow-100 text-yellow-800'
-                      : 'bg-red-100 text-red-800'
-                  }`}
+                      : arrival.delayInMin <= 20
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : 'bg-red-100 text-red-800'
+                    }`}
                 >
                   {arrival.delayInMin} min
                 </span>
