@@ -26,7 +26,7 @@ interface TimelineDataPoint {
 
 const getDelayColor = (delay: number) => {
   if (delay <= 5) return '#22c55e'; // green
-  if (delay <= 15) return '#eab308'; // yellow
+  if (delay <= 20) return '#eab308'; // yellow
   return '#ef4444'; // red
 };
 
@@ -52,12 +52,12 @@ export function TrainSummaryPanel({ arrivals }: TrainSummaryPanelProps) {
     },
     {
       name: t('trainSummary.delayCategories.slightDelay'),
-      value: arrivals.filter(a => !a.isCanceled && a.delayInMin > 5 && a.delayInMin <= 15).length,
+      value: arrivals.filter(a => !a.isCanceled && a.delayInMin > 5 && a.delayInMin <= 20).length,
       color: '#eab308' // yellow
     },
     {
       name: t('trainSummary.delayCategories.majorDelay'),
-      value: arrivals.filter(a => !a.isCanceled && a.delayInMin > 15).length,
+      value: arrivals.filter(a => !a.isCanceled && a.delayInMin > 20).length,
       color: '#ef4444' // red
     },
     {
