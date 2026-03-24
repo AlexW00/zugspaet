@@ -1,6 +1,7 @@
 """Unit tests for server.py."""
 
 import sys
+from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -94,6 +95,40 @@ class TestPublicEndpoints:
             assert response.status_code == 200
             assert response.json == [{"time": "10:00", "delayInMin": 5}]
 
+    def test_train_arrivals_serializes_time_in_berlin_timezone(self, client):
+        """Test arrival timestamps are serialized as Berlin-local ISO strings."""
+        mock_conn = MagicMock()
+        mock_cursor = MagicMock()
+        mock_cursor.fetchall.return_value = [
+            {
+                "time": datetime(2026, 3, 24, 15, 50, tzinfo=timezone.utc),
+                "delayInMin": 5,
+                "finalDestinationStation": "Stuttgart Hbf",
+                "isCanceled": False,
+            }
+        ]
+        mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
+
+        with (
+            patch("server.validate_station_name") as mock_val_station,
+            patch("server.validate_train_name") as mock_val_train,
+            patch("server.get_db_connection", return_value=mock_conn),
+        ):
+            mock_val_station.return_value = True
+            mock_val_train.return_value = True
+
+            response = client.get("/api/trainArrivals?trainStation=Berlin Hbf&trainName=ICE 123")
+
+            assert response.status_code == 200
+            assert response.json == [
+                {
+                    "time": "2026-03-24T16:50:00+01:00",
+                    "delayInMin": 5,
+                    "finalDestinationStation": "Stuttgart Hbf",
+                    "isCanceled": False,
+                }
+            ]
+
     def test_train_arrivals_missing_params(self, client):
         """Test error when parameters are missing."""
         # Missing trainName
@@ -135,14 +170,11 @@ class TestPublicEndpoints:
             app_module.xml_dir = original_xml_dir
 
     def test_last_import(self, client):
-        """Test last import date endpoint."""
+        """Test last import timestamp endpoint."""
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
 
-        # Mock date object
-        mock_date = MagicMock()
-        mock_date.isoformat.return_value = "2024-01-01T23:30:00"
-        mock_cursor.fetchone.return_value = [mock_date]
+        mock_cursor.fetchone.return_value = [datetime(2024, 1, 1, 23, 30, tzinfo=timezone.utc)]
 
         mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
 
@@ -150,7 +182,7 @@ class TestPublicEndpoints:
             response = client.get("/api/lastImport")
 
             assert response.status_code == 200
-            assert response.json["lastImport"] == "2024-01-01T23:30:00"
+            assert response.json["lastImport"] == "2024-01-02T00:30:00+01:00"
 
 
 class TestPrivateEndpoints:

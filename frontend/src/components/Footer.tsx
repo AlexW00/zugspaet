@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/client';
+import { BERLIN_TIME_ZONE } from '../utils/datetime';
 
 export function Footer() {
   const { t } = useTranslation();
@@ -24,6 +25,7 @@ export function Footer() {
 
   const date = new Date(lastImport);
   const formattedDate = new Intl.DateTimeFormat(undefined, {
+    timeZone: BERLIN_TIME_ZONE,
     dateStyle: 'medium',
     timeStyle: 'short'
   }).format(date);

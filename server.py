@@ -1,8 +1,10 @@
 import logging
 import os
 from functools import wraps
+from datetime import date, datetime
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import psycopg2.extras
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -71,6 +73,22 @@ if not eva_dir:
 xml_dir = Path(os.getenv("XML_DIR", "data"))
 if not xml_dir:
     raise ValueError("No xml directory provided!")
+
+LOCAL_TIMEZONE = ZoneInfo("Europe/Berlin")
+
+
+def serialize_datetime(value):
+    """Serialize a date/datetime value as an ISO string in Europe/Berlin."""
+    if value is None:
+        return None
+
+    if isinstance(value, date) and not isinstance(value, datetime):
+        return datetime.combine(value, datetime.min.time(), tzinfo=LOCAL_TIMEZONE).isoformat()
+
+    if value.tzinfo is None:
+        return value.replace(tzinfo=LOCAL_TIMEZONE).isoformat()
+
+    return value.astimezone(LOCAL_TIMEZONE).isoformat()
 
 
 def run_data_fetch():
@@ -235,7 +253,11 @@ def get_train_arrivals(station, train_name, days_cutoff=30):
                 """,
                 (station, train_name, days_cutoff),
             )
-            arrivals = [dict(row) for row in cur.fetchall()]
+            arrivals = []
+            for row in cur.fetchall():
+                arrival = dict(row)
+                arrival["time"] = serialize_datetime(arrival["time"])
+                arrivals.append(arrival)
             return arrivals
     finally:
         conn.close()
@@ -393,9 +415,9 @@ def last_import():
         conn = get_db_connection()
         try:
             with conn.cursor() as cur:
-                cur.execute("SELECT MAX(date) FROM processed_dates")
-                last_import_date = cur.fetchone()[0]
-                return jsonify({"lastImport": (last_import_date.isoformat() if last_import_date else None)})
+                cur.execute("SELECT MAX(processed_at) FROM processed_dates")
+                last_import_at = cur.fetchone()[0]
+                return jsonify({"lastImport": serialize_datetime(last_import_at)})
         finally:
             conn.close()
     except Exception as e:
