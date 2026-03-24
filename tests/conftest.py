@@ -6,8 +6,11 @@ import pytest
 
 
 @pytest.fixture(autouse=True)
-def mock_env_vars(monkeypatch):
+def mock_env_vars(monkeypatch, request):
     """Set up test environment variables."""
+    if "integration" in request.keywords:
+        return
+
     monkeypatch.setenv("DB_HOST", "localhost")
     monkeypatch.setenv("DB_PASSWORD", "test_password")
     monkeypatch.setenv("POSTGRES_DB", "test_db")

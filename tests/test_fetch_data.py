@@ -135,3 +135,48 @@ class TestSaveApiData:
                 save_api_data(url, save_path, headers, prettify=False, max_retries=2)
 
         assert save_path.exists()
+
+
+class TestFetchData:
+    """Tests for fetch_data orchestration."""
+
+    def test_fetch_data_handles_single_station_eva_file(self, tmp_path):
+        """A one-row EVA CSV should still be read as strings and processed."""
+        from fetch_data import fetch_data
+
+        eva_dir = tmp_path / "eva"
+        xml_dir = tmp_path / "xml"
+        eva_dir.mkdir()
+        xml_dir.mkdir()
+
+        (eva_dir / "single.csv").write_text(
+            '"name","category","evas","longitude","latitude"\n"Böblingen",3,"08001055",9.004128,48.687758\n'
+        )
+
+        recorded_calls = []
+
+        def fake_save_api_data(
+            formatted_url, save_path, headers, prettify=True, max_retries=4, skip_if_exists=False
+        ):
+            recorded_calls.append(
+                {
+                    "url": formatted_url,
+                    "save_path": save_path,
+                    "headers": headers,
+                    "prettify": prettify,
+                    "skip_if_exists": skip_if_exists,
+                }
+            )
+
+        with patch("fetch_data.save_api_data", side_effect=fake_save_api_data):
+            save_folder = fetch_data(
+                api_key="api-key",
+                client_id="client-id",
+                eva_file="single.csv",
+                eva_dir=eva_dir,
+                xml_dir=xml_dir,
+            )
+
+        assert save_folder.exists()
+        assert len(recorded_calls) == 7
+        assert all("08001055" in call["url"] for call in recorded_calls)
