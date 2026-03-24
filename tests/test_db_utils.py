@@ -7,6 +7,78 @@ import psycopg2
 import pytest
 
 
+class FakeMigrationCursor:
+    """Tiny cursor fake for exercising migration tracking logic."""
+
+    def __init__(self, state):
+        self.state = state
+        self._result_one = None
+        self._result_all = None
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        return False
+
+    def execute(self, sql, params=None):
+        normalized_sql = " ".join(sql.split())
+        self.state["executed_sql"].append((normalized_sql, params))
+
+        if normalized_sql.startswith("CREATE TABLE IF NOT EXISTS schema_migrations"):
+            self._result_one = None
+            self._result_all = None
+            return
+
+        if normalized_sql.startswith("SELECT to_regclass(%s)"):
+            relation_name = params[0]
+            self._result_one = (relation_name if relation_name in self.state["relations"] else None,)
+            self._result_all = None
+            return
+
+        if normalized_sql.startswith("SELECT EXISTS(SELECT 1 FROM applied_data_fixes"):
+            fix_name = params[0]
+            self._result_one = (fix_name in self.state["data_fixes"],)
+            self._result_all = None
+            return
+
+        if normalized_sql == "SELECT filename FROM schema_migrations":
+            self._result_all = [(name,) for name in sorted(self.state["applied_migrations"])]
+            self._result_one = None
+            return
+
+        if normalized_sql.startswith(
+            "INSERT INTO schema_migrations (filename) VALUES (%s) ON CONFLICT (filename) DO NOTHING"
+        ):
+            self.state["applied_migrations"].add(params[0])
+            self._result_one = None
+            self._result_all = None
+            return
+
+        self.state["migration_sql"].append(normalized_sql)
+        self._result_one = None
+        self._result_all = None
+
+    def fetchone(self):
+        return self._result_one
+
+    def fetchall(self):
+        return self._result_all
+
+
+class FakeMigrationConnection:
+    """Connection fake that keeps migration-tracking state across init_database calls."""
+
+    def __init__(self, state):
+        self.state = state
+        self.commit = MagicMock()
+        self.rollback = MagicMock()
+        self.close = MagicMock()
+
+    def cursor(self):
+        return FakeMigrationCursor(self.state)
+
+
 class TestGetDbConnection:
     """Tests for get_db_connection function."""
 
@@ -124,3 +196,73 @@ class TestBulkInsertTrainData:
 
         mock_execute_values.assert_called_once()
         mock_conn.commit.assert_called_once()
+
+
+class TestInitDatabase:
+    """Tests for migration tracking in init_database."""
+
+    def test_init_database_records_and_skips_migrations_after_first_run(self, monkeypatch, tmp_path):
+        """A migration file should execute once, then be skipped on later startups."""
+        from db_utils import init_database
+
+        migrations_dir = tmp_path / "migrations"
+        migrations_dir.mkdir()
+        (migrations_dir / "001_initial_schema.sql").write_text("SELECT 1 AS migration_001;")
+        (migrations_dir / "002_fix_train_data_timezone.sql").write_text("SELECT 2 AS migration_002;")
+
+        state = {
+            "relations": set(),
+            "data_fixes": set(),
+            "applied_migrations": set(),
+            "executed_sql": [],
+            "migration_sql": [],
+        }
+        fake_conn = FakeMigrationConnection(state)
+
+        monkeypatch.chdir(tmp_path)
+        with patch("db_utils.get_db_connection", return_value=fake_conn):
+            init_database()
+            init_database()
+
+        assert state["applied_migrations"] == {
+            "001_initial_schema.sql",
+            "002_fix_train_data_timezone.sql",
+        }
+        assert state["migration_sql"].count("SELECT 1 AS migration_001;") == 1
+        assert state["migration_sql"].count("SELECT 2 AS migration_002;") == 1
+        assert fake_conn.commit.call_count == 2
+
+    def test_init_database_bootstraps_existing_migrations_without_rerunning_them(self, monkeypatch, tmp_path):
+        """Older deployments should backfill migration history and skip already-applied SQL files."""
+        from db_utils import init_database
+
+        migrations_dir = tmp_path / "migrations"
+        migrations_dir.mkdir()
+        (migrations_dir / "001_initial_schema.sql").write_text("SELECT 1 AS migration_001;")
+        (migrations_dir / "002_fix_train_data_timezone.sql").write_text("SELECT 2 AS migration_002;")
+
+        state = {
+            "relations": {
+                "public.processed_dates",
+                "public.train_data",
+                "public.v_train_stations",
+                "public.v_station_trains",
+                "public.v_train_arrivals",
+                "public.applied_data_fixes",
+            },
+            "data_fixes": {"fix_train_data_timezone_v1"},
+            "applied_migrations": set(),
+            "executed_sql": [],
+            "migration_sql": [],
+        }
+        fake_conn = FakeMigrationConnection(state)
+
+        monkeypatch.chdir(tmp_path)
+        with patch("db_utils.get_db_connection", return_value=fake_conn):
+            init_database()
+
+        assert state["applied_migrations"] == {
+            "001_initial_schema.sql",
+            "002_fix_train_data_timezone.sql",
+        }
+        assert state["migration_sql"] == []
