@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { CartesianGrid, Cell, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { TrainArrival } from '../api/types';
+import { formatBerlinDate, formatBerlinTime, getBerlinDateKey } from '../utils/datetime';
 
 interface TrainSummaryPanelProps {
   arrivals: TrainArrival[];
@@ -72,27 +73,21 @@ export function TrainSummaryPanel({ arrivals }: TrainSummaryPanelProps) {
     .filter(a => !a.isCanceled)
     .reduce((acc: { [key: string]: TimelineDataPoint }, arrival) => {
       const date = new Date(arrival.time);
-      // Use full date key to prevent merging different years
-      const fullDateKey = date.toISOString().split('T')[0];
+      // Use Berlin-local date keys so midnight rides stay on the correct day.
+      const fullDateKey = getBerlinDateKey(date);
 
-      const displayDate = date.toLocaleDateString('de-DE', {
-        month: 'numeric',
-        day: 'numeric'
-      }).replace(/\.$/, ''); // Remove trailing dot
+      const displayDate = formatBerlinDate(date);
 
       const rideInfo = {
         delay: arrival.delayInMin,
         color: getDelayColor(arrival.delayInMin),
-        time: date.toLocaleTimeString('de-DE', {
-          hour: '2-digit',
-          minute: '2-digit'
-        })
+        time: formatBerlinTime(date)
       };
 
       if (!acc[fullDateKey]) {
         acc[fullDateKey] = {
           time: displayDate,
-          timestamp: date.setHours(0, 0, 0, 0),
+          timestamp: Date.parse(`${fullDateKey}T00:00:00Z`),
           delay: arrival.delayInMin,
           color: getDelayColor(arrival.delayInMin),
           rides: [rideInfo]

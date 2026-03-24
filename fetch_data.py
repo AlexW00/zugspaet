@@ -143,10 +143,12 @@ def fetch_data(
     save_folder = Path(xml_dir) / date_str
     save_folder.mkdir(exist_ok=True, parents=True)
 
-    df = pd.read_csv(Path(eva_dir) / eva_file)
+    df = pd.read_csv(Path(eva_dir) / eva_file, dtype={"evas": "string"})
     eva_list = []
     for evas in df["evas"]:
-        eva_list.extend(evas.split(","))
+        if pd.isna(evas):
+            continue
+        eva_list.extend(str(evas).split(","))
 
     curent_hour = datetime.now().hour
     for eva in eva_list:

@@ -22,3 +22,10 @@ ignore = [
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+markers = [
+    "integration: tests that exercise multiple real components together",
+    "live_api: integration tests that require Deutsche Bahn API credentials",
+]

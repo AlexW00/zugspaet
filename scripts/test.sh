@@ -54,11 +54,22 @@ fi
 
 echo ""
 print_step "Running backend tests (pytest)..."
-if pytest tests/ -v --cov=. --cov-report=term-missing; then
+if pytest tests/ -v -m "not integration" --cov=. --cov-report=term-missing; then
     print_success "Backend tests passed"
 else
     print_error "Backend tests failed"
     exit 1
+fi
+
+if [ "${RUN_INTEGRATION_TESTS:-0}" = "1" ]; then
+    echo ""
+    print_step "Running integration tests..."
+    if pytest tests/integration -v -m "integration"; then
+        print_success "Integration tests passed"
+    else
+        print_error "Integration tests failed"
+        exit 1
+    fi
 fi
 
 # Frontend tests

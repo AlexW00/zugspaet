@@ -2,6 +2,7 @@ import { ChevronDownIcon, ChevronUpIcon, InformationCircleIcon } from '@heroicon
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { TrainArrival } from '../api/types';
+import { formatBerlinDateTime } from '../utils/datetime';
 import { Skeleton } from './Skeleton';
 
 interface TrainArrivalsTableProps {
@@ -147,13 +148,7 @@ export function TrainArrivalsTable({ arrivals, isLoading = false }: TrainArrival
           {sortedArrivals.map((arrival) => (
             <tr key={`${arrival.time}-${arrival.finalDestinationStation}`}>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {new Date(arrival.time).toLocaleString('de-DE', {
-                  year: 'numeric',
-                  month: '2-digit',
-                  day: '2-digit',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
+                {formatBerlinDateTime(arrival.time)}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm">
                 <span

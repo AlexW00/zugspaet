@@ -7,6 +7,7 @@ DB_CONFIG = {
     "database": os.getenv("DB_NAME", "deutsche_bahn_data"),
     "user": os.getenv("DB_USER", "postgres"),
     "password": os.getenv("DB_PASSWORD", "postgres"),
+    "options": os.getenv("DB_OPTIONS", "-c timezone=Europe/Berlin"),
 }
 
 # Data directory configuration

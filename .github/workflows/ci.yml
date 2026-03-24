@@ -8,7 +8,7 @@ on:
 
 jobs:
   backend-tests:
-    name: Backend Tests
+    name: Backend Unit Tests
     runs-on: ubuntu-latest
 
     steps:
@@ -34,8 +34,56 @@ jobs:
       - name: Run ruff format check
         run: ruff format --check .
 
-      - name: Run pytest
-        run: pytest tests/ -v --cov=. --cov-report=term-missing --cov-fail-under=0
+      - name: Run backend unit tests
+        run: pytest tests/ -v -m "not integration" --cov=. --cov-report=term-missing --cov-fail-under=0
+
+  integration-tests:
+    name: Backend Integration Tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      RUN_INTEGRATION_TESTS: "1"
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      POSTGRES_PASSWORD: postgres
+      PRIVATE_API_KEY: integration-private-key
+      API_KEY: ${{ secrets.DB_API_KEY }}
+      CLIENT_ID: ${{ secrets.DB_CLIENT_ID }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r test_requirements.txt
+
+      - name: Run backend integration tests
+        run: pytest tests/integration -v -m "integration"
 
   frontend-build:
     name: Frontend Build
