@@ -3,12 +3,26 @@
 # CI/CD test script for zugspaet
 # Run this locally before pushing to verify everything works
 
-set -e  # Exit on first error
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+PYTHON_BIN="$PROJECT_ROOT/.venv/bin/python"
+RUFF_BIN="$PROJECT_ROOT/.venv/bin/ruff"
 
 cd "$PROJECT_ROOT"
+
+if [ ! -x "$PYTHON_BIN" ]; then
+    echo "Missing virtualenv python at $PYTHON_BIN"
+    echo "Create it first, for example: python3 -m venv .venv && ./.venv/bin/pip install -r requirements.txt -r test_requirements.txt"
+    exit 1
+fi
+
+if [ ! -x "$RUFF_BIN" ]; then
+    echo "Missing ruff at $RUFF_BIN"
+    echo "Install test/dev dependencies into .venv first."
+    exit 1
+fi
 
 echo "================================================"
 echo "  zugspaet CI/CD Local Test Runner"
@@ -36,7 +50,7 @@ print_error() {
 # Backend tests
 echo ""
 print_step "Running backend linting (ruff)..."
-if ruff check .; then
+if "$RUFF_BIN" check .; then
     print_success "Ruff linting passed"
 else
     print_error "Ruff linting failed"
@@ -45,7 +59,7 @@ fi
 
 echo ""
 print_step "Running ruff format check..."
-if ruff format --check .; then
+if "$RUFF_BIN" format --check .; then
     print_success "Ruff format check passed"
 else
     print_error "Ruff format check failed (run 'ruff format .' to fix)"
@@ -54,7 +68,7 @@ fi
 
 echo ""
 print_step "Running backend tests (pytest)..."
-if pytest tests/ -v -m "not integration" --cov=. --cov-report=term-missing; then
+if "$PYTHON_BIN" -m pytest tests/ -v -m "not integration" --cov=. --cov-report=term-missing; then
     print_success "Backend tests passed"
 else
     print_error "Backend tests failed"
@@ -64,7 +78,7 @@ fi
 if [ "${RUN_INTEGRATION_TESTS:-0}" = "1" ]; then
     echo ""
     print_step "Running integration tests..."
-    if pytest tests/integration -v -m "integration"; then
+    if "$SCRIPT_DIR/test-integration.sh"; then
         print_success "Integration tests passed"
     else
         print_error "Integration tests failed"
