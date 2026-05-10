@@ -1,5 +1,5 @@
 # Build stage for frontend
-FROM node:25-slim AS frontend-builder
+FROM node:26-slim AS frontend-builder
 WORKDIR /app/frontend
 
 # Add build arguments for API URL and Ackee tracking
