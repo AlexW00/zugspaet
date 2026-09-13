@@ -1,42 +1,101 @@
+# Group related minor and patch version updates; review major updates separately.
+# Security updates keep their independent, immediate PRs. No versions are ignored.
+# https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference#groups
 version: 2
 updates:
-  # Maintain dependencies for pip
-  - package-ecosystem: "pip"
-    directory: "/"
+  - package-ecosystem: pip
+    directory: /
     schedule:
-      interval: "weekly"
+      interval: weekly
     groups:
-      dependencies:
+      backend-tests:
+        applies-to: version-updates
         patterns:
-          - "*"
-
-  # Maintain dependencies for npm
-  - package-ecosystem: "npm"
-    directory: "/frontend"
+          - pytest*
+          - responses
+        update-types:
+          - minor
+          - patch
+      data-processing:
+        applies-to: version-updates
+        patterns:
+          - pandas
+          - pyarrow
+          - numpy
+        update-types:
+          - minor
+          - patch
+      backend-runtime:
+        applies-to: version-updates
+        patterns:
+          - '*'
+        update-types:
+          - minor
+          - patch
+  - package-ecosystem: npm
+    directory: /frontend
     schedule:
-      interval: "weekly"
+      interval: weekly
     groups:
-      dependencies:
+      react:
+        applies-to: version-updates
         patterns:
-          - "*"
-
-  # Maintain dependencies for Docker
-  - package-ecosystem: "docker"
-    directory: "/"
+          - react
+          - react-dom
+          - '@types/react'
+          - '@types/react-dom'
+        update-types:
+          - minor
+          - patch
+      frontend-tooling:
+        applies-to: version-updates
+        patterns:
+          - '*'
+        update-types:
+          - minor
+          - patch
+        dependency-type: development
+      frontend-runtime:
+        applies-to: version-updates
+        patterns:
+          - '*'
+        update-types:
+          - minor
+          - patch
+        dependency-type: production
+  - package-ecosystem: docker
+    directory: /
     schedule:
-      interval: "weekly"
+      interval: weekly
     groups:
-      dependencies:
+      base-images:
+        applies-to: version-updates
         patterns:
-          - "*"
-
-  # Maintain Compose images and CI actions alongside application libraries.
-  - package-ecosystem: "docker-compose"
-    directory: "/"
+          - '*'
+        update-types:
+          - minor
+          - patch
+  - package-ecosystem: docker-compose
+    directory: /
     schedule:
-      interval: "weekly"
-
-  - package-ecosystem: "github-actions"
-    directory: "/"
+      interval: weekly
+    groups:
+      compose-images:
+        applies-to: version-updates
+        patterns:
+          - '*'
+        update-types:
+          - minor
+          - patch
+  - package-ecosystem: github-actions
+    directory: /
     schedule:
-      interval: "weekly"
+      interval: weekly
+    groups:
+      ci-actions:
+        applies-to: version-updates
+        patterns:
+          - '*'
+        update-types:
+          - minor
+          - patch
