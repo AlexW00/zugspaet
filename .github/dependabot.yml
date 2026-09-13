@@ -29,3 +29,14 @@ updates:
       dependencies:
         patterns:
           - "*"
+
+  # Maintain Compose images and CI actions alongside application libraries.
+  - package-ecosystem: "docker-compose"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"

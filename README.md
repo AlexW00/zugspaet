@@ -136,3 +136,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Credits
 
 Forked from [deutsche-bahn-data](https://github.com/piebro/deutsche-bahn-data) by [piebro](https://github.com/piebro) - a collection of Python scripts to fetch and store Deutsche Bahn train data. Without this project, Zugspät would not be possible!
+
+## Deployment maintenance
+
+The Compose app and database use `restart: unless-stopped` so they return after
+host reboots. Keep this policy in the deployment source when recreating containers.
+Dependabot checks Python, frontend npm, Dockerfile, Compose and GitHub Actions
+dependencies weekly. Review database image changes with a tested backup before
+merging; a Compose image change can require a data migration.
